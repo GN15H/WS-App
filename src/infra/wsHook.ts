@@ -22,9 +22,15 @@ export function useSocket(
 
     socket.on("connect", () => {
       console.log("Cliente 2 conectado:", socket.id);
+      // socket.emit("users.actives.subscribe");
       onConnectionChange(true);   // <--- AVISAMOS AL PROVIDER
     });
 
+    // socket.on("users.updated", (users) => {
+    //   console.log("usuarios online:");
+    //   console.log(users);
+    //   console.table(users);
+    // });
     socket.on("disconnect", () => {
       console.log("Cliente desconectado");
       onConnectionChange(false);  // <--- AVISAMOS AL PROVIDER

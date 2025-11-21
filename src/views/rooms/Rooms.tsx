@@ -93,14 +93,20 @@ export default function ChatApp() {
     const off = ws.on("rooms_list", (data) =>
       console.log("getRooms si?", data),
     );
-
-    ws.emit("get_users_online");
-
-    ws.on("users.updated", (users) => {
-      console.log("usuarios online:");
+    ws.emit("get_rooms");
+    ws.on("rooms_list", (users) => {
+      console.log("rooms:");
       console.log(users);
       console.table(users);
     });
+
+    // ws.emit("get_users_online");
+
+    // ws.on("users.updated", (users) => {
+    //   console.log("usuarios online:");
+    //   console.log(users);
+    //   console.table(users);
+    // });
     return off;
   }, [isConnected]); // 👈 se ejecuta cuando cambie estado de conexión
 
