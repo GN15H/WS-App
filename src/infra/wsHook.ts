@@ -2,52 +2,49 @@
 import { useEffect, useRef, useCallback } from "react";
 import { io, Socket } from "socket.io-client";
 
-export function useSocket(url: string) {
+
+export function useSocket(
+  url: string,
+  onConnectionChange: (connected: boolean) => void
+) {
   const socketRef = useRef<Socket | null>(null);
 
-  // Connect + authenticate
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) return;
 
-    const socket = io("localhost:3100", {
+    const socket = io(url, {
       transports: ["websocket"],
-      auth: {
-        token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiZW1haWwiOiJwZXBpdG9AY29ycmVvLmNvbSIsImlhdCI6MTc2MzY5NjEwOCwiZXhwIjoxNzYzNzM5MzA4fQ.M9KprLfDr4sXAOSdCIVlNiIMTG_A-urp-c4rDJzBMfY",
-      },
+      auth: { token },
     });
 
     socketRef.current = socket;
 
-    socket.on("connect_error", (err) => {
-      console.error("Socket connection error:", err);
+    socket.on("connect", () => {
+      console.log("Cliente 2 conectado:", socket.id);
+      onConnectionChange(true);   // <--- AVISAMOS AL PROVIDER
     });
 
-    return () => {
-      socket.disconnect();
-    };
-  }, [url]);
+    socket.on("disconnect", () => {
+      console.log("Cliente desconectado");
+      onConnectionChange(false);  // <--- AVISAMOS AL PROVIDER
+    });
 
-  // Register event listener
+    return () => socket.disconnect();
+  }, [url, onConnectionChange]);
+
   const on = useCallback((event: string, handler: (data: any) => void) => {
     const socket = socketRef.current;
     if (!socket) return;
-
     socket.on(event, handler);
-
-    return () => {
-      socket.off(event, handler); // cleanup
-    };
+    return () => socket.off(event, handler);
   }, []);
 
-  // Emit event
   const emit = useCallback((event: string, payload?: any) => {
-    const socket = socketRef.current;
-    if (!socket) return;
-
-    socket.emit(event, payload);
+    socketRef.current?.emit(event, payload);
   }, []);
 
   return { socket: socketRef.current, on, emit };
 }
+
 
