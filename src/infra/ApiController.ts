@@ -1,5 +1,5 @@
 import axios from "axios";
-import type { IRoomMap, Room } from "../domain/models/Room";
+import { Room, type IRoomMap } from "../domain/models/Room";
 
 export class ApiController {
 
@@ -14,4 +14,18 @@ export class ApiController {
     return rooms;
   }
 
+  async createRoom(name: string, description: string) {
+    const token = localStorage.getItem('token');
+    const req = await axios.post(import.meta.env.VITE_API_URI + '/rooms/create', {
+      name: name,
+      description: description
+    },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      })
+    const rooms: Room = Room.fromMap(req.data);
+    return rooms;
+  }
 }

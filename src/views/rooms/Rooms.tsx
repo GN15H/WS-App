@@ -13,11 +13,14 @@ import {
   Chip,
   Typography,
   ListItemAvatar,
+  Button,
 } from "@mui/material";
 import SendIcon from "@mui/icons-material/Send";
-import type { Room } from "../../domain/models/Room";
+import { Room, type IRoomMap } from "../../domain/models/Room";
 import { RoomsController } from "./Rooms.controller";
 import { useWS } from "../../context/WSContext";
+import { Message, type IMessageMap } from "../../domain/models/Message";
+import SimpleFormDialog from "./RoomForm";
 
 const ROOMS = [
   { id: 1, name: "general" },
@@ -76,56 +79,81 @@ const INITIAL_MESSAGES: Record<
 };
 
 export default function ChatApp() {
-  // const controller = new RoomsController();
+  const controller = new RoomsController();
+  const [open, setOpen] = useState<boolean>(false);
   const { ws, isConnected } = useWS();
 
-  const [selectedRoom, setSelectedRoom] = useState(1);
-  const [messages, setMessages] = useState(INITIAL_MESSAGES);
+  const [selectedRoom, setSelectedRoom] = useState<number>(1);
+  // const [messages, setMessages] = useState(INITIAL_MESSAGES);
   const [input, setInput] = useState("");
-  // const [rooms, setRooms] = useState<Room[]>([]);
+  const [rooms, setRooms] = useState<Room[]>([]);
+  const [messages, setMessages] = useState<Record<number, Message[]>>({})
+
+  const handleRoomForm = (name: string, description: string) => {
+    controller.createRoom(name, description);
+  }
+
+  const getInitialRooms = (data: IRoomMap[]) => {
+    const newRooms = data.map(r => Room.fromMap(r));
+    console.log("cuales son las hp salas pues", newRooms);
+    setRooms(newRooms);
+  }
+  const getNewRoom = (room: IRoomMap) => {
+    setRooms(prev => [...prev, Room.fromMap(room)]);
+  }
+  const getNewMessage = (message: IMessageMap | IMessageMap[]) => {
+    if (Array.isArray(message)) {
+      console.log("es array");
+      // if (message.length == 0) return;
+      // const newMessages = message.map(m => Message.fromMap(m))
+      // setMessages(prev => ({
+      //   ...prev,
+      //   [newMessages[0].roomId]: [...prev[newMessages[0].roomId], ...newMessages]
+      // }))
+    } else {
+      console.log("es object");
+      const newMessage = Message.fromMap(message)
+      const newData = { ...messages }
+      console.log(newData);
+      console.log("el nuevo message", newMessage)
+      setMessages(prev => ({
+        ...prev,
+        [newMessage.roomId]: [...prev[newMessage.roomId], newMessage]
+      }))
+    }
+  }
 
   useEffect(() => {
     console.warn("Debug: Cleaning up WebSocket event listener.");
     if (!isConnected) return; // todavía no hay socket conectado
-
     console.log("useEffect chatApp? isConnected:", isConnected);
-
-    const off = ws.on("rooms_list", (data) =>
-      console.log("getRooms si?", data),
-    );
     ws.emit("get_rooms");
-    ws.on("rooms_list", (users) => {
-      console.log("rooms:");
-      console.log(users);
-      console.table(users);
-    });
+    ws.emit("messages.suscribe", { id: 2 });
+    ws.on("rooms_list", getInitialRooms);
+    ws.on("room_created", getNewRoom);
+    ws.on("messages.suscription", getNewMessage);
 
-    // ws.emit("get_users_online");
-
-    // ws.on("users.updated", (users) => {
-    //   console.log("usuarios online:");
-    //   console.log(users);
-    //   console.table(users);
-    // });
-    return off;
+    return () => {
+      ws.socket?.off("rooms_list", getInitialRooms);
+      ws.socket?.off("room_created");
+      ws.socket?.off("messages.suscription");
+    }
   }, [isConnected]); // 👈 se ejecuta cuando cambie estado de conexión
 
   const handleSendMessage = () => {
+    console.log("estoy mandando a ", {
+      roomId: selectedRoom,
+      message: input
+    })
     if (input.trim()) {
-      const newMessage = {
-        id: messages[selectedRoom].length + 1,
-        author: "You",
-        content: input,
-      };
-      setMessages({
-        ...messages,
-        [selectedRoom]: [...messages[selectedRoom], newMessage],
-      });
-      setInput("");
+      ws.emit("users-send.message", {
+        roomId: selectedRoom,
+        message: input
+      })
     }
   };
 
-  const currentRoom = ROOMS.find((r) => r.id === selectedRoom);
+  const currentRoom = rooms.find(r => r.id === selectedRoom);
   const currentUsers = USERS[selectedRoom] || [];
   const currentMessages = messages[selectedRoom] || [];
 
@@ -161,11 +189,14 @@ export default function ChatApp() {
         </Box>
         <Divider sx={{ bgcolor: "#202225" }} />
         <List sx={{ p: 0 }}>
-          {ROOMS.map((room) => (
+          {rooms.map((room) => (
             <ListItemButton
               key={room.id}
               selected={selectedRoom === room.id}
-              onClick={() => setSelectedRoom(room.id)}
+              onClick={() => {
+                console.log("le estoy dando a esta gonorrea", room)
+                setSelectedRoom(room.id)
+              }}
               sx={{
                 color: selectedRoom === room.id ? "#fff" : "#b9bbbe",
                 bgcolor: selectedRoom === room.id ? "#2c2f33" : "transparent",
@@ -188,6 +219,7 @@ export default function ChatApp() {
             </ListItemButton>
           ))}
         </List>
+        <Button onClick={() => setOpen(prev => !prev)}>Crear</Button>
       </Drawer>
 
       {/* Center - Chat Area */}
@@ -401,6 +433,12 @@ export default function ChatApp() {
           ))}
         </List>
       </Drawer>
+      <SimpleFormDialog
+        open={open}
+        onClose={() => setOpen(false)}
+        onSubmit={handleRoomForm}
+      />
     </Box>
+
   );
 }
