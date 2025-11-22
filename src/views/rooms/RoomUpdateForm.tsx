@@ -1,3 +1,4 @@
+
 import {
   Dialog,
   DialogTitle,
@@ -11,10 +12,10 @@ import { useState } from "react";
 interface Props {
   open: boolean;
   onClose: () => void;
-  onSubmit: (name: string, description: string) => void;
+  onUpdate: (name: string, description: string) => void;
 }
 
-export default function SimpleFormDialog({ open, onClose, onSubmit }: Props) {
+export default function UpdateRoomDialog({ open, onClose, onUpdate }: Props) {
   const [form, setForm] = useState({ field1: "", field2: "" });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -22,13 +23,13 @@ export default function SimpleFormDialog({ open, onClose, onSubmit }: Props) {
   };
 
   const handleSubmit = () => {
-    onSubmit(form.field1, form.field2);
+    onUpdate(form.field1, form.field2);
     onClose();
   };
 
   return (
     <Dialog open={open} onClose={onClose}>
-      <DialogTitle>Simple Form</DialogTitle>
+      <DialogTitle>Editar sala</DialogTitle>
 
       <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
         <TextField

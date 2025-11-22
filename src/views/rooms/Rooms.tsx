@@ -21,6 +21,9 @@ import { RoomsController } from "./Rooms.controller";
 import { useWS } from "../../context/WSContext";
 import { Message, type IMessageMap } from "../../domain/models/Message";
 import SimpleFormDialog from "./RoomForm";
+import type { RoomUser } from "./Rooms.types";
+import { User } from "../../domain/models/User";
+import UpdateRoomDialog from "./RoomUpdateForm";
 
 const ROOMS = [
   { id: 1, name: "general" },
@@ -80,7 +83,9 @@ const INITIAL_MESSAGES: Record<
 
 export default function ChatApp() {
   const controller = new RoomsController();
+  const activeUser: User = new User(JSON.parse(localStorage.getItem('profile')!))
   const [open, setOpen] = useState<boolean>(false);
+  const [editOpen, setEditOpen] = useState<boolean>(false);
   const { ws, isConnected } = useWS();
 
   const [selectedRoom, setSelectedRoom] = useState<number>(1);
@@ -88,50 +93,106 @@ export default function ChatApp() {
   const [input, setInput] = useState("");
   const [rooms, setRooms] = useState<Room[]>([]);
   const [messages, setMessages] = useState<Record<number, Message[]>>({})
+  const [users, setUsers] = useState<Record<number, RoomUser[]>>({});
+  const [subscribedRooms, setSubscribedRooms] = useState<Room[]>([]);
 
-  const handleRoomForm = (name: string, description: string) => {
-    controller.createRoom(name, description);
+  const joinRoom = async () => {
+    ws.emit('join_room', selectedRoom);
+    ws.emit("messages.suscribe", { id: selectedRoom });
+    ws.on(`users.room.updated.room_${selectedRoom}`, (users) => getUsersFromRoom(selectedRoom, users));
+
+    const newRoom = rooms.find(r => r.id == selectedRoom);
+    if (newRoom == undefined) return;
+    setSubscribedRooms(prev => [...prev, newRoom]);
+  }
+
+  const exitRoom = async () => {
+    ws.emit('left_room', selectedRoom);
+    window.location.reload()
+  }
+
+  const handleCreateRoom = async (name: string, description: string) => {
+    await controller.createRoom(name, description);
+    window.location.reload()
+    // ws.emit("messages.suscribe", { id: createdRoom.id });
+    // ws.on(`users.room.updated.room_${createdRoom.id}`, (users) => getUsersFromRoom(createdRoom.id, users));
+    // setSubscribedRooms(prev => [...prev, createdRoom])
+  }
+
+  const handleUpdateRoom = async (name: string, description: string) => {
+    const toBeUpdatedRoom = rooms.find(r => r.id == selectedRoom);
+    if (toBeUpdatedRoom == undefined) return;
+    await controller.updateRoom(name, description, toBeUpdatedRoom);
   }
 
   const getInitialRooms = (data: IRoomMap[]) => {
     const newRooms = data.map(r => Room.fromMap(r));
-    console.log("cuales son las hp salas pues", newRooms);
+    console.log("cuales son las rooms", data, newRooms);
     setRooms(newRooms);
   }
   const getNewRoom = (room: IRoomMap) => {
     setRooms(prev => [...prev, Room.fromMap(room)]);
   }
+
+  const updateRoom = (room: IRoomMap) => {
+    const updatedRoom = Room.fromMap(room);
+    setRooms(prev => {
+      const newArr = [...prev]
+      const toBeUpdatedRoom = prev.find(r => r.id == updatedRoom.id);
+      if (toBeUpdatedRoom == undefined) return prev;
+      const toBeUpdatedRoomIndex = prev.indexOf(toBeUpdatedRoom);
+      if (toBeUpdatedRoomIndex < 0) return prev;
+      newArr[toBeUpdatedRoomIndex] = updatedRoom;
+      return newArr
+    })
+  }
+  const getUsersFromRoom = async (roomId: number, data: any[]) => {
+    const roomUsers: RoomUser[] = data.map(u => ({
+      active: u['online'], user: new User({ id: u['id'], username: u['userName'], email: u['email'] })
+    }))
+    setUsers(prev => ({
+      ...prev,
+      [roomId]: roomUsers
+    }))
+  }
   const getNewMessage = (message: IMessageMap | IMessageMap[]) => {
     if (Array.isArray(message)) {
       console.log("es array");
-      // if (message.length == 0) return;
-      // const newMessages = message.map(m => Message.fromMap(m))
-      // setMessages(prev => ({
-      //   ...prev,
-      //   [newMessages[0].roomId]: [...prev[newMessages[0].roomId], ...newMessages]
-      // }))
+      // (we can fix this part too if needed)
     } else {
       console.log("es object");
-      const newMessage = Message.fromMap(message)
-      const newData = { ...messages }
-      console.log(newData);
-      console.log("el nuevo message", newMessage)
+      const newMessage = Message.fromMap(message);
+
       setMessages(prev => ({
         ...prev,
-        [newMessage.roomId]: [...prev[newMessage.roomId], newMessage]
-      }))
+        [newMessage.roomId]: [
+          ...(prev[newMessage.roomId] ?? []),
+          newMessage
+        ]
+      }));
     }
-  }
-
+  };
   useEffect(() => {
-    console.warn("Debug: Cleaning up WebSocket event listener.");
-    if (!isConnected) return; // todavía no hay socket conectado
-    console.log("useEffect chatApp? isConnected:", isConnected);
-    ws.emit("get_rooms");
-    ws.emit("messages.suscribe", { id: 2 });
-    ws.on("rooms_list", getInitialRooms);
-    ws.on("room_created", getNewRoom);
-    ws.on("messages.suscription", getNewMessage);
+    console.log("el active user manito", activeUser);
+    const init = async () => {
+      console.warn("Debug: Cleaning up WebSocket event listener.");
+      if (!isConnected) return; // todavía no hay socket conectado
+      const subscribedRooms = await controller.getRoomsByUser()
+      setSubscribedRooms(subscribedRooms);
+      console.log("useEffect chatApp? isConnected:", isConnected);
+      ws.emit("get_rooms");
+
+      subscribedRooms.forEach(r => {
+        ws.emit("users.room.subscribe", r.id);
+        ws.emit("messages.suscribe", { id: r.id });
+        ws.on(`users.room.updated.room_${r.id}`, (users) => getUsersFromRoom(r.id, users));
+      })
+      ws.on("rooms_list", getInitialRooms);
+      ws.on("room_created", getNewRoom);
+      ws.on("room_updated", updateRoom);
+      ws.on("messages.suscription", getNewMessage);
+    }
+    init();
 
     return () => {
       ws.socket?.off("rooms_list", getInitialRooms);
@@ -154,7 +215,7 @@ export default function ChatApp() {
   };
 
   const currentRoom = rooms.find(r => r.id === selectedRoom);
-  const currentUsers = USERS[selectedRoom] || [];
+  const currentUsers = users[selectedRoom] || [];
   const currentMessages = messages[selectedRoom] || [];
 
   return (
@@ -198,7 +259,7 @@ export default function ChatApp() {
                 setSelectedRoom(room.id)
               }}
               sx={{
-                color: selectedRoom === room.id ? "#fff" : "#b9bbbe",
+                color: selectedRoom === room.id ? "#fff" : subscribedRooms.some(r => r.id == room.id) ? "#b9bbbe" : "red",
                 bgcolor: selectedRoom === room.id ? "#2c2f33" : "transparent",
                 "&:hover": {
                   bgcolor: "#2c2f33",
@@ -209,7 +270,7 @@ export default function ChatApp() {
               }}
             >
               <ListItemText
-                primary={`# ${room.name}`}
+                primary={`# ${room.name} `}
                 primaryTypographyProps={{
                   sx: {
                     fontWeight: selectedRoom === room.id ? "bold" : "normal",
@@ -219,7 +280,14 @@ export default function ChatApp() {
             </ListItemButton>
           ))}
         </List>
-        <Button onClick={() => setOpen(prev => !prev)}>Crear</Button>
+        <Box height={'100%'} />
+        <Box display={'flex'} flexDirection={'row'} justifyContent={'space-between'} width={'100%'}>
+          <Button sx={{ backgroundColor: "cyan" }} variant="contained" onClick={() => setOpen(prev => !prev)}>Crear</Button>
+          <Button variant="outlined" sx={{ color: 'white' }} onClick={() => {
+            localStorage.removeItem('token');
+            window.location.reload()
+          }}>Salir</Button>
+        </Box>
       </Drawer>
 
       {/* Center - Chat Area */}
@@ -241,12 +309,28 @@ export default function ChatApp() {
             width: "100%", // 240px + 240px sidebars
             height: "10%",
             display: "flex",
-            flexDirection: "column",
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: 'space-between'
           }}
         >
           <Typography variant="h6" sx={{ color: "#fff", fontWeight: "bold" }}>
-            # {currentRoom?.name}
+            # {currentRoom?.name} {!subscribedRooms.some(r => r.id == selectedRoom) ? "(No pertenece)" : ""}
           </Typography>
+          <Box
+            display={'flex'}
+            justifyContent={'space-between'}
+            flexDirection={'column'}>
+
+            {rooms.find(r => r.id == selectedRoom)?.ownerId == activeUser.id &&
+              <Button onClick={() => setEditOpen(true)} variant="outlined" sx={{ backgroundColor: '#8050ea', color: "white" }}>Editar sala</Button>
+            }
+            {
+              subscribedRooms.some(r => r.id == selectedRoom) &&
+              <Button onClick={exitRoom} variant="outlined" sx={{ backgroundColor: 'red', color: "white" }}>Salir de sala</Button>
+            }
+
+          </Box>
         </Box>
 
         {/* Messages */}
@@ -260,7 +344,7 @@ export default function ChatApp() {
             gap: 1,
           }}
         >
-          {currentMessages.map((msg) => (
+          {subscribedRooms.some(r => r.id == selectedRoom) && currentMessages.map((msg) => (
             <Box key={msg.id} sx={{ display: "flex", gap: 2 }}>
               <Avatar
                 sx={{
@@ -269,7 +353,7 @@ export default function ChatApp() {
                   height: 40,
                 }}
               >
-                {msg.author[0]}
+                {msg.userId}
               </Avatar>
               <Box sx={{ flex: 1 }}>
                 <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
@@ -280,7 +364,7 @@ export default function ChatApp() {
                       fontWeight: "bold",
                     }}
                   >
-                    {msg.author}
+                    {msg.userId}
                   </Typography>
                   <Typography variant="caption" sx={{ color: "#72767d" }}>
                     12:34 PM
@@ -293,7 +377,7 @@ export default function ChatApp() {
                     mt: 0.5,
                   }}
                 >
-                  {msg.content}
+                  {msg.message}
                 </Typography>
               </Box>
             </Box>
@@ -301,60 +385,66 @@ export default function ChatApp() {
         </Box>
 
         {/* Message Input */}
-        <Box
-          sx={{
-            p: 2,
-            bgcolor: "#36393f",
-            borderTop: "1px solid #202225",
-          }}
-        >
-          <Box sx={{ display: "flex", gap: 1 }}>
-            <TextField
-              fullWidth
-              placeholder="Message #general"
-              variant="outlined"
-              size="small"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyPress={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  handleSendMessage();
-                }
-              }}
-              sx={{
-                "& .MuiOutlinedInput-root": {
-                  color: "#dcddde",
-                  bgcolor: "#40444b",
-                  "& fieldset": {
-                    borderColor: "#202225",
+
+        {!subscribedRooms.some(r => r.id == selectedRoom) &&
+          <Button onClick={joinRoom}>Unirse</Button>
+        }
+        {subscribedRooms.some(r => r.id == selectedRoom) &&
+          <Box
+            sx={{
+              p: 2,
+              bgcolor: "#36393f",
+              borderTop: "1px solid #202225",
+            }}
+          >
+            <Box sx={{ display: "flex", gap: 1 }}>
+              <TextField
+                fullWidth
+                placeholder="Message #general"
+                variant="outlined"
+                size="small"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyPress={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSendMessage();
+                  }
+                }}
+                sx={{
+                  "& .MuiOutlinedInput-root": {
+                    color: "#dcddde",
+                    bgcolor: "#40444b",
+                    "& fieldset": {
+                      borderColor: "#202225",
+                    },
+                    "&:hover fieldset": {
+                      borderColor: "#202225",
+                    },
+                    "&.Mui-focused fieldset": {
+                      borderColor: "#5865F2",
+                    },
                   },
-                  "&:hover fieldset": {
-                    borderColor: "#202225",
+                  "& .MuiOutlinedInput-input::placeholder": {
+                    color: "#72767d",
+                    opacity: 1,
                   },
-                  "&.Mui-focused fieldset": {
-                    borderColor: "#5865F2",
+                }}
+              />
+              <IconButton
+                onClick={handleSendMessage}
+                sx={{
+                  color: "#5865F2",
+                  "&:hover": {
+                    color: "#7289da",
                   },
-                },
-                "& .MuiOutlinedInput-input::placeholder": {
-                  color: "#72767d",
-                  opacity: 1,
-                },
-              }}
-            />
-            <IconButton
-              onClick={handleSendMessage}
-              sx={{
-                color: "#5865F2",
-                "&:hover": {
-                  color: "#7289da",
-                },
-              }}
-            >
-              <SendIcon />
-            </IconButton>
+                }}
+              >
+                <SendIcon />
+              </IconButton>
+            </Box>
           </Box>
-        </Box>
+        }
       </Box>
 
       {/* Right Sidebar - Users */}
@@ -381,11 +471,11 @@ export default function ChatApp() {
         <List sx={{ p: 0 }}>
           {currentUsers.map((user) => (
             <ListItem
-              key={user.id}
+              key={user.user.id}
               sx={{
                 px: 2,
                 py: 1,
-                bgcolor: user.online
+                bgcolor: user.active
                   ? "rgba(88, 101, 242, 0.1)"
                   : "transparent",
               }}
@@ -395,12 +485,12 @@ export default function ChatApp() {
                   sx={{
                     width: 32,
                     height: 32,
-                    bgcolor: user.online ? "#43B581" : "#747f8d",
+                    bgcolor: user.active ? "#43B581" : "#747f8d",
                     position: "relative",
                   }}
                 >
-                  {user.name[0]}
-                  {user.online && (
+                  {user.user.username[0]}
+                  {user.active && (
                     <Box
                       sx={{
                         position: "absolute",
@@ -416,8 +506,8 @@ export default function ChatApp() {
                   )}
                 </Avatar>
               </ListItemAvatar>
-              <ListItemText primary={user.name} />
-              {user.online && (
+              <ListItemText primary={user.user.username} />
+              {user.active && (
                 <Chip
                   label="Online"
                   size="small"
@@ -436,8 +526,9 @@ export default function ChatApp() {
       <SimpleFormDialog
         open={open}
         onClose={() => setOpen(false)}
-        onSubmit={handleRoomForm}
+        onSubmit={handleCreateRoom}
       />
+      <UpdateRoomDialog open={editOpen} onClose={() => setEditOpen(false)} onUpdate={handleUpdateRoom} />
     </Box>
 
   );
