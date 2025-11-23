@@ -1,5 +1,4 @@
 import type React from "react";
-
 import {
   Dialog,
   DialogTitle,
@@ -32,69 +31,22 @@ export default function UpdateRoomDialog({ open, onClose, onUpdate }: Props) {
   };
 
   return (
-    <Dialog
-      open={open}
-      onClose={onClose}
-      PaperProps={{
-        sx: {
-          borderRadius: "8px",
-          background: "#1a1a1a",
-          boxShadow: "0 20px 60px rgba(0, 0, 0, 0.5)",
-          backdropFilter: "none",
-          border: "1px solid #333333",
-        },
-      }}
-    >
-      <DialogTitle
-        sx={{
-          background: "#121212",
-          color: "#ffffff",
-          fontSize: "1.1rem",
-          fontWeight: 600,
-          borderBottom: "1px solid #333333",
-        }}
-      >
-        Edit Channel
-      </DialogTitle>
-
+    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+      <DialogTitle sx={{ fontWeight: 700 }}>Editar Canal</DialogTitle>
       <DialogContent
-        sx={{
-          display: "flex",
-          flexDirection: "column",
-          gap: 2.5,
-          pt: 2.5,
-          pb: 2,
-        }}
+        sx={{ display: "flex", flexDirection: "column", gap: 2, pt: 2 }}
       >
         <TextField
-          label="Name"
+          label="Nombre"
           name="field1"
           value={form.field1}
           onChange={handleChange}
           fullWidth
           variant="outlined"
           size="small"
-          sx={{
-            "& .MuiOutlinedInput-root": {
-              color: "#ffffff",
-              bgcolor: "#121212",
-              borderRadius: "4px",
-              transition: "all 0.2s ease",
-              "& fieldset": {
-                borderColor: "#333333",
-              },
-              "&:hover fieldset": {
-                borderColor: "#444444",
-              },
-              "&.Mui-focused fieldset": {
-                borderColor: "#00d4ff",
-              },
-            },
-          }}
         />
-
         <TextField
-          label="Description"
+          label="Descripción"
           name="field2"
           value={form.field2}
           onChange={handleChange}
@@ -102,71 +54,19 @@ export default function UpdateRoomDialog({ open, onClose, onUpdate }: Props) {
           multiline
           rows={3}
           variant="outlined"
-          sx={{
-            "& .MuiOutlinedInput-root": {
-              color: "#ffffff",
-              bgcolor: "#121212",
-              borderRadius: "4px",
-              transition: "all 0.2s ease",
-              "& fieldset": {
-                borderColor: "#333333",
-              },
-              "&:hover fieldset": {
-                borderColor: "#444444",
-              },
-              "&.Mui-focused fieldset": {
-                borderColor: "#00d4ff",
-              },
-            },
-          }}
         />
       </DialogContent>
-
-      <DialogActions
-        sx={{
-          p: 1.5,
-          gap: 1,
-          borderTop: "1px solid #333333",
-        }}
-      >
-        <Button
-          onClick={onClose}
-          sx={{
-            color: "#888888",
-            textTransform: "none",
-            fontSize: "0.9rem",
-            fontWeight: 500,
-            transition: "all 0.2s ease",
-            "&:hover": {
-              bgcolor: "rgba(255, 255, 255, 0.05)",
-              color: "#ffffff",
-            },
-          }}
-        >
-          Cancel
+      <DialogActions sx={{ p: 2, gap: 1 }}>
+        <Button onClick={onClose} sx={{ textTransform: "none" }}>
+          Cancelar
         </Button>
         <Button
           onClick={handleSubmit}
           variant="contained"
           disabled={!form.field1.trim()}
-          sx={{
-            background: "#00d4ff",
-            color: "#000000",
-            textTransform: "none",
-            fontSize: "0.9rem",
-            fontWeight: 600,
-            borderRadius: "4px",
-            transition: "all 0.2s ease",
-            "&:hover:not(:disabled)": {
-              background: "#00b8cc",
-              transform: "translateY(-1px)",
-            },
-            "&:disabled": {
-              opacity: 0.4,
-            },
-          }}
+          sx={{ textTransform: "none", fontWeight: 600 }}
         >
-          Update
+          Actualizar
         </Button>
       </DialogActions>
     </Dialog>

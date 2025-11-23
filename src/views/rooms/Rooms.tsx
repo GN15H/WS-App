@@ -13,8 +13,11 @@ import {
   Typography,
   ListItemAvatar,
   Button,
+  useTheme,
 } from "@mui/material";
 import SendIcon from "@mui/icons-material/Send";
+import AddIcon from "@mui/icons-material/Add";
+import LogoutIcon from "@mui/icons-material/Logout";
 import { Room, type IRoomMap } from "../../domain/models/Room";
 import { RoomsController } from "./Rooms.controller";
 import { useWS } from "../../context/WSContext";
@@ -23,9 +26,11 @@ import SimpleFormDialog from "./RoomForm";
 import type { RoomUser } from "./Rooms.types";
 import { User } from "../../domain/models/User";
 import UpdateRoomDialog from "./RoomUpdateForm";
+import { ThemeToggle } from "../components/ThemeToogle";
 
 export default function ChatApp() {
   const controller = new RoomsController();
+  const muiTheme = useTheme();
   const activeUser: User = new User(
     JSON.parse(localStorage.getItem("profile")!),
   );
@@ -159,49 +164,52 @@ export default function ChatApp() {
   const currentUsers = users[selectedRoom] || [];
   const currentMessages = messages[selectedRoom] || [];
 
+  const sidebarWidth = 280;
+  const membersSidebarWidth = 280;
+
   return (
     <Box
       sx={{
         display: "flex",
         height: "100vh",
-        background: "#0f0f0f",
         width: "100vw",
         overflow: "hidden",
+        bgcolor: "background.default",
       }}
     >
-      {/* Left Sidebar - Rooms List */}
+      {/* Left Sidebar - Channels */}
       <Drawer
         variant="permanent"
         open
         sx={{
-          width: { xs: "0px", sm: "280px", md: "280px" },
+          width: { xs: "0px", sm: sidebarWidth, md: sidebarWidth },
           flexShrink: 0,
           display: { xs: "none", sm: "block" },
           "& .MuiDrawer-paper": {
-            width: "280px",
-            background: "#121212",
-            border: "1px solid #1a1a1a",
-            backdropFilter: "none",
-            overflowY: "auto",
+            width: sidebarWidth,
+            bgcolor: "background.paper",
+            borderRight: "1px solid",
+            borderColor: "divider",
+            boxShadow: "none",
           },
         }}
       >
-        <Box sx={{ p: 2 }}>
-          <Typography
-            variant="h6"
-            sx={{
-              color: "#888888",
-              fontWeight: 600,
-              fontSize: "0.85rem",
-              letterSpacing: "0.8px",
-              textTransform: "uppercase",
-            }}
-          >
-            Channels
+        <Box
+          sx={{
+            p: 2,
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
+          <Typography variant="h6" sx={{ fontWeight: 700 }}>
+            Canales
           </Typography>
+          <ThemeToggle />
         </Box>
-        <Divider sx={{ bgcolor: "#1a1a1a" }} />
-        <List sx={{ p: 0 }}>
+        <Divider />
+
+        <List sx={{ p: 0, flex: 1, overflowY: "auto" }}>
           {rooms.map((room) => {
             const isSubscribed = subscribedRooms.some((r) => r.id == room.id);
             return (
@@ -210,32 +218,31 @@ export default function ChatApp() {
                 selected={selectedRoom === room.id}
                 onClick={() => setSelectedRoom(room.id)}
                 sx={{
-                  color:
+                  borderLeft: "3px solid",
+                  borderColor:
+                    selectedRoom === room.id ? "primary.main" : "transparent",
+                  bgcolor:
                     selectedRoom === room.id
-                      ? "#ffffff"
-                      : isSubscribed
-                        ? "#888888"
-                        : "#555555",
-                  bgcolor: selectedRoom === room.id ? "#1a1a1a" : "transparent",
-                  borderLeft:
-                    selectedRoom === room.id
-                      ? "2px solid #00d4ff"
-                      : "2px solid transparent",
+                      ? "action.selected"
+                      : "transparent",
+                  py: 1.5,
+                  px: 2,
+                  mb: 0.5,
+                  mx: 1,
+                  borderRadius: "0 8px 8px 0",
                   transition: "all 0.2s ease",
                   "&:hover": {
-                    bgcolor: "#1a1a1a",
-                    color: "#ffffff",
+                    bgcolor: "action.hover",
                   },
-                  py: 1,
-                  px: 2,
                 }}
               >
                 <ListItemText
                   primary={`# ${room.name}`}
                   primaryTypographyProps={{
+                    variant: "body2",
                     sx: {
-                      fontWeight: 500,
-                      fontSize: "0.9rem",
+                      fontWeight: selectedRoom === room.id ? 600 : 500,
+                      color: isSubscribed ? "text.primary" : "text.secondary",
                     },
                   }}
                 />
@@ -243,55 +250,49 @@ export default function ChatApp() {
             );
           })}
         </List>
-        <Box flexGrow={1} />
 
+        <Divider />
         <Box
-          display="flex"
-          flexDirection="column"
-          gap={1}
-          p={2}
           sx={{
-            borderTop: "1px solid #1a1a1a",
+            p: 2,
+            display: "flex",
+            flexDirection: "column",
+            gap: 1,
           }}
         >
           <Button
+            fullWidth
             variant="contained"
-            onClick={() => setOpen((prev) => !prev)}
+            startIcon={<AddIcon />}
+            onClick={() => setOpen(true)}
             sx={{
-              background: "#00d4ff",
-              color: "#000000",
               textTransform: "none",
               fontWeight: 600,
-              borderRadius: "4px",
-              fontSize: "0.9rem",
-              transition: "all 0.2s ease",
-              "&:hover": {
-                background: "#00b8cc",
-                transform: "translateY(-1px)",
-              },
             }}
           >
-            New Channel
+            Nuevo Canal
           </Button>
           <Button
-            variant="text"
+            fullWidth
+            variant="outlined"
+            startIcon={<LogoutIcon />}
             onClick={() => {
               localStorage.removeItem("token");
               window.location.reload();
             }}
             sx={{
-              color: "#888888",
               textTransform: "none",
-              fontWeight: 500,
-              fontSize: "0.9rem",
-              transition: "all 0.2s ease",
+              fontWeight: 600,
+              color: "error.main",
+              borderColor: "error.main",
               "&:hover": {
-                color: "#ffffff",
-                bgcolor: "#1a1a1a",
+                bgcolor: "error.light",
+                borderColor: "error.main",
+                color: "error.contrastText",
               },
             }}
           >
-            Logout
+            Salir
           </Button>
         </Box>
       </Drawer>
@@ -299,78 +300,55 @@ export default function ChatApp() {
       {/* Main Chat Area */}
       <Box
         sx={{
-          width: "100%",
           flex: 1,
           display: "flex",
           flexDirection: "column",
-          bgcolor: "#0f0f0f",
+          overflow: "hidden",
         }}
       >
         {/* Header */}
         <Box
           sx={{
-            width: "100%",
-            height: { xs: "60px", md: "70px" },
+            height: 70,
             display: "flex",
-            flexDirection: "row",
             alignItems: "center",
             justifyContent: "space-between",
-            p: { xs: "1.5", md: "2" },
-            borderBottom: "1px solid #1a1a1a",
-            backdropFilter: "none",
+            px: { xs: 2, md: 3 },
+            borderBottom: "1px solid",
+            borderColor: "divider",
+            bgcolor: "background.paper",
           }}
         >
-          <Typography
-            variant="h6"
-            sx={{
-              color: "#ffffff",
-              fontWeight: 600,
-              fontSize: { xs: "1rem", md: "1.15rem" },
-            }}
-          >
+          <Typography variant="h6" sx={{ fontWeight: 700, fontSize: "1.1rem" }}>
             # {currentRoom?.name}
           </Typography>
-          <Box display="flex" gap={1} flexDirection="row">
+
+          <Box display="flex" gap={1}>
             {rooms.find((r) => r.id == selectedRoom)?.ownerId ===
               activeUser.id && (
               <Button
                 onClick={() => setEditOpen(true)}
-                variant="text"
+                variant="outlined"
+                size="small"
                 sx={{
-                  color: "#00d4ff",
                   textTransform: "none",
-                  fontWeight: 500,
-                  fontSize: { xs: "0.8rem", md: "0.9rem" },
-                  border: "1px solid #00d4ff",
-                  borderRadius: "4px",
-                  transition: "all 0.2s ease",
-                  "&:hover": {
-                    bgcolor: "rgba(0, 212, 255, 0.1)",
-                  },
+                  fontWeight: 600,
                 }}
               >
-                Edit
+                Editar
               </Button>
             )}
             {subscribedRooms.some((r) => r.id == selectedRoom) && (
               <Button
                 onClick={exitRoom}
-                variant="text"
+                variant="outlined"
+                size="small"
                 sx={{
-                  color: "#888888",
                   textTransform: "none",
-                  fontWeight: 500,
-                  fontSize: { xs: "0.8rem", md: "0.9rem" },
-                  border: "1px solid #333333",
-                  borderRadius: "4px",
-                  transition: "all 0.2s ease",
-                  "&:hover": {
-                    color: "#ffffff",
-                    borderColor: "#555555",
-                  },
+                  fontWeight: 600,
                 }}
               >
-                Leave
+                Salir
               </Button>
             )}
           </Box>
@@ -386,119 +364,119 @@ export default function ChatApp() {
             flexDirection: "column",
             gap: 2,
             "&::-webkit-scrollbar": {
-              width: "6px",
+              width: "8px",
             },
             "&::-webkit-scrollbar-track": {
               bgcolor: "transparent",
             },
             "&::-webkit-scrollbar-thumb": {
-              bgcolor: "#333333",
-              borderRadius: "3px",
+              bgcolor: "divider",
+              borderRadius: "4px",
               "&:hover": {
-                bgcolor: "#444444",
+                bgcolor: "action.disabled",
               },
             },
           }}
         >
-          {subscribedRooms.some((r) => r.id == selectedRoom) &&
-            currentMessages.map((msg) => (
-              <Box
-                key={msg.id}
-                sx={{
-                  display: "flex",
-                  gap: 2,
-                  animation: "slideIn 0.3s ease",
-                  "@keyframes slideIn": {
-                    "0%": { opacity: 0, transform: "translateY(8px)" },
-                    "100%": { opacity: 1, transform: "translateY(0)" },
-                  },
-                }}
-              >
-                <Avatar
+          {subscribedRooms.some((r) => r.id == selectedRoom) ? (
+            currentMessages.length > 0 ? (
+              currentMessages.map((msg) => (
+                <Box
+                  key={msg.id}
                   sx={{
-                    background: "#1a1a1a",
-                    width: 36,
-                    height: 36,
-                    fontWeight: 600,
-                    fontSize: "0.9rem",
-                    color: "#00d4ff",
-                    border: "1px solid #333333",
+                    display: "flex",
+                    gap: 2,
+                    animation: "slideIn 0.3s ease",
+                    "@keyframes slideIn": {
+                      "0%": { opacity: 0, transform: "translateY(8px)" },
+                      "100%": { opacity: 1, transform: "translateY(0)" },
+                    },
                   }}
                 >
-                  {msg.userId.toString()[0]}
-                </Avatar>
-                <Box sx={{ flex: 1 }}>
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                  <Avatar
+                    sx={{
+                      width: 40,
+                      height: 40,
+                      bgcolor: "primary.main",
+                      fontWeight: 600,
+                      flexShrink: 0,
+                    }}
+                  >
+                    {msg.userId.toString()[0]}
+                  </Avatar>
+                  <Box sx={{ flex: 1 }}>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          fontWeight: 600,
+                        }}
+                      >
+                        User #{msg.userId}
+                      </Typography>
+                      <Typography
+                        variant="caption"
+                        sx={{ color: "text.secondary" }}
+                      >
+                        12:34 PM
+                      </Typography>
+                    </Box>
                     <Typography
                       variant="body2"
                       sx={{
-                        color: "#ffffff",
-                        fontWeight: 500,
-                        fontSize: "0.9rem",
+                        color: "text.primary",
+                        mt: 0.5,
+                        lineHeight: 1.6,
                       }}
                     >
-                      User #{msg.userId}
-                    </Typography>
-                    <Typography
-                      variant="caption"
-                      sx={{ color: "#555555", fontSize: "0.8rem" }}
-                    >
-                      12:34 PM
+                      {msg.message}
                     </Typography>
                   </Box>
-                  <Typography
-                    variant="body2"
-                    sx={{
-                      color: "#cccccc",
-                      mt: 0.5,
-                      fontSize: "0.9rem",
-                      lineHeight: 1.5,
-                    }}
-                  >
-                    {msg.message}
-                  </Typography>
                 </Box>
+              ))
+            ) : (
+              <Box sx={{ textAlign: "center", py: 4 }}>
+                <Typography variant="body2" sx={{ color: "text.secondary" }}>
+                  Sin mensajes aún. ¡Sé el primero en escribir!
+                </Typography>
               </Box>
-            ))}
+            )
+          ) : (
+            <Box sx={{ textAlign: "center", py: 4 }}>
+              <Typography
+                variant="body2"
+                sx={{ color: "text.secondary", mb: 2 }}
+              >
+                Únete a este canal para ver los mensajes
+              </Typography>
+              <Button
+                onClick={joinRoom}
+                variant="contained"
+                sx={{
+                  textTransform: "none",
+                  fontWeight: 600,
+                }}
+              >
+                Unirse al Canal
+              </Button>
+            </Box>
+          )}
         </Box>
 
-        {/* Message Input Area */}
-        {!subscribedRooms.some((r) => r.id == selectedRoom) ? (
-          <Box sx={{ p: 3, textAlign: "center" }}>
-            <Button
-              onClick={joinRoom}
-              variant="contained"
-              sx={{
-                background: "#00d4ff",
-                color: "#000000",
-                textTransform: "none",
-                fontSize: "0.95rem",
-                fontWeight: 600,
-                borderRadius: "4px",
-                px: 3,
-                py: 1.2,
-                transition: "all 0.2s ease",
-                "&:hover": {
-                  background: "#00b8cc",
-                  transform: "translateY(-2px)",
-                },
-              }}
-            >
-              Join Channel
-            </Button>
-          </Box>
-        ) : (
+        {/* Message Input */}
+        {subscribedRooms.some((r) => r.id == selectedRoom) && (
           <Box
             sx={{
               p: { xs: 1.5, md: 2 },
-              borderTop: "1px solid #1a1a1a",
-              backdropFilter: "none",
+              borderTop: "1px solid",
+              borderColor: "divider",
+              bgcolor: "background.paper",
             }}
           >
             <Box sx={{ display: "flex", gap: 1 }}>
               <TextField
                 fullWidth
-                placeholder={`Message #${currentRoom?.name}`}
+                placeholder={`Escribe un mensaje en #${currentRoom?.name}...`}
                 variant="outlined"
                 size="small"
                 value={input}
@@ -511,36 +489,19 @@ export default function ChatApp() {
                 }}
                 sx={{
                   "& .MuiOutlinedInput-root": {
-                    color: "#ffffff",
-                    bgcolor: "#1a1a1a",
-                    borderRadius: "4px",
-                    transition: "all 0.2s ease",
-                    "& fieldset": {
-                      borderColor: "#333333",
-                    },
-                    "&:hover fieldset": {
-                      borderColor: "#444444",
-                    },
-                    "&.Mui-focused fieldset": {
-                      borderColor: "#00d4ff",
-                      borderWidth: 1,
-                    },
-                  },
-                  "& .MuiOutlinedInput-input::placeholder": {
-                    color: "#555555",
-                    opacity: 1,
+                    borderRadius: "8px",
                   },
                 }}
               />
               <IconButton
                 onClick={handleSendMessage}
                 sx={{
-                  color: "#00d4ff",
-                  bgcolor: "transparent",
-                  borderRadius: "4px",
+                  color: "primary.main",
+                  borderRadius: "8px",
                   transition: "all 0.2s ease",
                   "&:hover": {
-                    bgcolor: "rgba(0, 212, 255, 0.1)",
+                    bgcolor: "primary.light",
+                    color: "primary.contrastText",
                   },
                 }}
               >
@@ -551,62 +512,55 @@ export default function ChatApp() {
         )}
       </Box>
 
-      {/* Right Sidebar - Users List */}
+      {/* Right Sidebar - Members */}
       <Drawer
         variant="permanent"
         anchor="right"
         open
         sx={{
-          width: { xs: "0px", md: "280px" },
+          width: { xs: "0px", md: membersSidebarWidth },
           flexShrink: 0,
           display: { xs: "none", md: "block" },
           "& .MuiDrawer-paper": {
-            width: "280px",
-            background: "#121212",
-            border: "1px solid #1a1a1a",
-            backdropFilter: "none",
+            width: membersSidebarWidth,
+            bgcolor: "background.paper",
+            borderLeft: "1px solid",
+            borderColor: "divider",
+            boxShadow: "none",
           },
         }}
       >
         <Box sx={{ p: 2 }}>
-          <Typography
-            variant="h6"
-            sx={{
-              color: "#888888",
-              fontWeight: 600,
-              fontSize: "0.85rem",
-              letterSpacing: "0.8px",
-              textTransform: "uppercase",
-            }}
-          >
-            Members
+          <Typography variant="h6" sx={{ fontWeight: 700 }}>
+            Miembros
           </Typography>
         </Box>
-        <Divider sx={{ bgcolor: "#1a1a1a" }} />
+        <Divider />
+
         <List sx={{ p: 0 }}>
           {currentUsers.map((user) => (
             <ListItem
               key={user.user.id}
               sx={{
                 px: 2,
-                py: 1.2,
+                py: 1.5,
+                borderLeft: "3px solid",
+                borderColor: user.active ? "success.main" : "transparent",
                 bgcolor: "transparent",
-                borderLeft: "2px solid transparent",
                 transition: "all 0.2s ease",
                 "&:hover": {
-                  bgcolor: "#1a1a1a",
+                  bgcolor: "action.hover",
                 },
               }}
             >
               <ListItemAvatar>
                 <Avatar
                   sx={{
-                    width: 32,
-                    height: 32,
-                    background: user.active ? "#00d4ff" : "#333333",
-                    color: user.active ? "#000000" : "#888888",
+                    width: 36,
+                    height: 36,
+                    bgcolor: user.active ? "success.main" : "action.disabled",
                     fontWeight: 600,
-                    fontSize: "0.85rem",
+                    fontSize: "0.9rem",
                   }}
                 >
                   {user.user.username[0].toUpperCase()}
@@ -615,28 +569,25 @@ export default function ChatApp() {
               <ListItemText
                 primary={user.user.username}
                 primaryTypographyProps={{
+                  variant: "body2",
                   sx: {
                     fontWeight: 500,
-                    fontSize: "0.9rem",
-                    color: "#ffffff",
+                  },
+                }}
+                secondary={user.active ? "En línea" : "Desconectado"}
+                secondaryTypographyProps={{
+                  variant: "caption",
+                  sx: {
+                    color: user.active ? "success.main" : "text.secondary",
                   },
                 }}
               />
-              {user.active && (
-                <Box
-                  sx={{
-                    width: 8,
-                    height: 8,
-                    borderRadius: "50%",
-                    background: "#00d4ff",
-                  }}
-                />
-              )}
             </ListItem>
           ))}
         </List>
       </Drawer>
 
+      {/* Dialogs */}
       <SimpleFormDialog
         open={open}
         onClose={() => setOpen(false)}

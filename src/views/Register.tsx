@@ -1,8 +1,21 @@
+"use client";
+
 import type React from "react";
-import { Box, Button, TextField, Alert, CircularProgress } from "@mui/material";
+import {
+  Box,
+  Button,
+  TextField,
+  Alert,
+  CircularProgress,
+  Container,
+  Card,
+  Typography,
+  Link,
+} from "@mui/material";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { RegisterController } from "./Register.controller";
+import { ThemeToggle } from "./components/ThemeToogle";
 
 interface RegisterErrors {
   username?: string;
@@ -23,7 +36,6 @@ export const Register = () => {
   const [loading, setLoading] = useState<boolean>(false);
   const [errors, setErrors] = useState<RegisterErrors>({});
 
-  // Validación completa del formulario
   const validateForm = (): boolean => {
     const newErrors: RegisterErrors = {};
 
@@ -86,94 +98,158 @@ export const Register = () => {
 
   return (
     <Box
-      gap="2vh"
-      width="100%"
-      height="100%"
-      display="flex"
-      flexDirection="column"
-      alignItems="center"
-      justifyContent="center"
-      px={2}
+      sx={{
+        width: "100%",
+        height: "100vh",
+        display: "flex",
+        flexDirection: "column",
+      }}
     >
-      <h1 style={{ marginBottom: "2rem" }}>Registrarse</h1>
-
-      {errors.general && (
-        <Alert severity="error" sx={{ width: "100%", maxWidth: "400px" }}>
-          {errors.general}
-        </Alert>
-      )}
-
-      <TextField
-        label="Nombre de Usuario"
-        value={username}
-        onChange={(e) => setUsername(e.target.value)}
-        onKeyPress={handleKeyPress}
-        error={!!errors.username}
-        helperText={errors.username}
-        disabled={loading}
-        fullWidth
-        sx={{ maxWidth: "400px" }}
-      />
-
-      <TextField
-        label="Correo"
-        type="email"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        onKeyPress={handleKeyPress}
-        error={!!errors.email}
-        helperText={errors.email}
-        disabled={loading}
-        fullWidth
-        sx={{ maxWidth: "400px" }}
-      />
-
-      <TextField
-        type="password"
-        label="Contraseña"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-        onKeyPress={handleKeyPress}
-        error={!!errors.password}
-        helperText={errors.password}
-        disabled={loading}
-        fullWidth
-        sx={{ maxWidth: "400px" }}
-      />
-
-      <TextField
-        type="password"
-        label="Confirmar Contraseña"
-        value={confirmPassword}
-        onChange={(e) => setConfirmPassword(e.target.value)}
-        onKeyPress={handleKeyPress}
-        error={!!errors.confirmPassword}
-        helperText={errors.confirmPassword}
-        disabled={loading}
-        fullWidth
-        sx={{ maxWidth: "400px" }}
-      />
-
-      <Button
-        variant="contained"
-        onClick={handleRegister}
-        disabled={loading}
-        sx={{ maxWidth: "400px", width: "100%", minHeight: "44px" }}
+      {/* Header with Theme Toggle */}
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          p: 2,
+          borderBottom: "1px solid",
+          borderColor: "divider",
+        }}
       >
-        {loading ? (
-          <CircularProgress size={24} color="inherit" />
-        ) : (
-          "Registrarse"
-        )}
-      </Button>
+        <Typography variant="h6" sx={{ fontWeight: 700, fontSize: "1.2rem" }}>
+          Chat Pro
+        </Typography>
+        <ThemeToggle />
+      </Box>
 
-      <Button
-        onClick={() => navigate("/")}
-        disabled={loading}
-        sx={{ maxWidth: "400px", width: "100%" }}
+      {/* Main Content */}
+      <Box
+        sx={{
+          flex: 1,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          px: 2,
+          overflowY: "auto",
+        }}
       >
-        ¿Ya tienes cuenta? Inicia sesión
-      </Button>
+        <Container maxWidth="sm">
+          <Card
+            sx={{
+              p: { xs: 3, sm: 4 },
+              borderRadius: 2,
+            }}
+          >
+            <Box sx={{ mb: 3 }}>
+              <Typography variant="h4" sx={{ fontWeight: 700, mb: 1 }}>
+                Crear Cuenta
+              </Typography>
+              <Typography variant="body2" sx={{ color: "text.secondary" }}>
+                Regístrate para comenzar a chatear
+              </Typography>
+            </Box>
+
+            {errors.general && (
+              <Alert severity="error" sx={{ mb: 2 }}>
+                {errors.general}
+              </Alert>
+            )}
+
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+              <TextField
+                fullWidth
+                label="Nombre de Usuario"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                onKeyPress={handleKeyPress}
+                error={!!errors.username}
+                helperText={errors.username}
+                disabled={loading}
+                placeholder="Tu nombre"
+                variant="outlined"
+              />
+
+              <TextField
+                fullWidth
+                label="Correo Electrónico"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                onKeyPress={handleKeyPress}
+                error={!!errors.email}
+                helperText={errors.email}
+                disabled={loading}
+                placeholder="tu@email.com"
+                variant="outlined"
+              />
+
+              <TextField
+                fullWidth
+                label="Contraseña"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                onKeyPress={handleKeyPress}
+                error={!!errors.password}
+                helperText={errors.password}
+                disabled={loading}
+                placeholder="••••••••"
+                variant="outlined"
+              />
+
+              <TextField
+                fullWidth
+                label="Confirmar Contraseña"
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                onKeyPress={handleKeyPress}
+                error={!!errors.confirmPassword}
+                helperText={errors.confirmPassword}
+                disabled={loading}
+                placeholder="••••••••"
+                variant="outlined"
+              />
+
+              <Button
+                fullWidth
+                variant="contained"
+                onClick={handleRegister}
+                disabled={loading}
+                size="large"
+                sx={{
+                  mt: 1,
+                  py: 1.2,
+                }}
+              >
+                {loading ? (
+                  <CircularProgress size={24} color="inherit" />
+                ) : (
+                  "Crear Cuenta"
+                )}
+              </Button>
+
+              <Box sx={{ textAlign: "center", mt: 2 }}>
+                <Typography variant="body2" sx={{ color: "text.secondary" }}>
+                  ¿Ya tienes cuenta?{" "}
+                  <Link
+                    component="button"
+                    onClick={() => navigate("/")}
+                    disabled={loading}
+                    sx={{
+                      fontWeight: 600,
+                      cursor: "pointer",
+                      textDecoration: "none",
+                    }}
+                  >
+                    Inicia Sesión
+                  </Link>
+                </Typography>
+              </Box>
+            </Box>
+          </Card>
+        </Container>
+      </Box>
     </Box>
   );
 };
