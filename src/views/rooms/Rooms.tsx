@@ -113,7 +113,15 @@ export default function ChatApp() {
 
   const getNewMessage = (message: IMessageMap | IMessageMap[]) => {
     if (Array.isArray(message)) {
-      console.log("es array");
+      const newMessages = message.map((m) => Message.fromMap(m));
+      if (newMessages.length === 0) return;
+      setMessages((prev) => ({
+        ...prev,
+        [newMessages[0].roomId]: [
+          ...(prev[newMessages[0].roomId] ?? []),
+          ...newMessages,
+        ],
+      }));
     } else {
       const newMessage = Message.fromMap(message);
       setMessages((prev) => ({
