@@ -27,6 +27,7 @@ import type { RoomUser } from "./Rooms.types";
 import { User } from "../../domain/models/User";
 import UpdateRoomDialog from "./RoomUpdateForm";
 import { ThemeToggle } from "../components/ThemeToogle";
+import { UserAvatar } from "../components/userAvatar";
 
 export default function ChatApp() {
   const controller = new RoomsController();
@@ -120,6 +121,11 @@ export default function ChatApp() {
         [newMessage.roomId]: [...(prev[newMessage.roomId] ?? []), newMessage],
       }));
     }
+  };
+
+  const getUserInfo = (userId: number) => {
+    const user = currentUsers.find((u) => u.user.id === userId);
+    return user?.user;
   };
 
   useEffect(() => {
@@ -380,60 +386,61 @@ export default function ChatApp() {
         >
           {subscribedRooms.some((r) => r.id == selectedRoom) ? (
             currentMessages.length > 0 ? (
-              currentMessages.map((msg) => (
-                <Box
-                  key={msg.id}
-                  sx={{
-                    display: "flex",
-                    gap: 2,
-                    animation: "slideIn 0.3s ease",
-                    "@keyframes slideIn": {
-                      "0%": { opacity: 0, transform: "translateY(8px)" },
-                      "100%": { opacity: 1, transform: "translateY(0)" },
-                    },
-                  }}
-                >
-                  <Avatar
+              currentMessages.map((msg) => {
+                const userInfo = getUserInfo(msg.userId);
+                const username = userInfo?.username || `User #${msg.userId}`;
+
+                return (
+                  <Box
+                    key={msg.id}
                     sx={{
-                      width: 40,
-                      height: 40,
-                      bgcolor: "primary.main",
-                      fontWeight: 600,
-                      flexShrink: 0,
+                      display: "flex",
+                      gap: 2,
+                      animation: "slideIn 0.3s ease",
+                      "@keyframes slideIn": {
+                        "0%": { opacity: 0, transform: "translateY(8px)" },
+                        "100%": { opacity: 1, transform: "translateY(0)" },
+                      },
                     }}
                   >
-                    {msg.userId.toString()[0]}
-                  </Avatar>
-                  <Box sx={{ flex: 1 }}>
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                    <UserAvatar
+                      userId={msg.userId}
+                      username={username}
+                      size={40}
+                    />
+                    <Box sx={{ flex: 1 }}>
+                      <Box
+                        sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                      >
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            fontWeight: 600,
+                          }}
+                        >
+                          {username}
+                        </Typography>
+                        <Typography
+                          variant="caption"
+                          sx={{ color: "text.secondary" }}
+                        >
+                          12:34 PM
+                        </Typography>
+                      </Box>
                       <Typography
                         variant="body2"
                         sx={{
-                          fontWeight: 600,
+                          color: "text.primary",
+                          mt: 0.5,
+                          lineHeight: 1.6,
                         }}
                       >
-                        User #{msg.userId}
-                      </Typography>
-                      <Typography
-                        variant="caption"
-                        sx={{ color: "text.secondary" }}
-                      >
-                        12:34 PM
+                        {msg.message}
                       </Typography>
                     </Box>
-                    <Typography
-                      variant="body2"
-                      sx={{
-                        color: "text.primary",
-                        mt: 0.5,
-                        lineHeight: 1.6,
-                      }}
-                    >
-                      {msg.message}
-                    </Typography>
                   </Box>
-                </Box>
-              ))
+                );
+              })
             ) : (
               <Box sx={{ textAlign: "center", py: 4 }}>
                 <Typography variant="body2" sx={{ color: "text.secondary" }}>
