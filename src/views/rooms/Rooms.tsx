@@ -25,196 +25,138 @@ import type { RoomUser } from "./Rooms.types";
 import { User } from "../../domain/models/User";
 import UpdateRoomDialog from "./RoomUpdateForm";
 
-const ROOMS = [
-  { id: 1, name: "general" },
-  { id: 2, name: "random" },
-  { id: 3, name: "announcements" },
-  { id: 4, name: "tech-help" },
-  { id: 5, name: "off-topic" },
-];
-
-const USERS: Record<number, { id: number; name: string; online: boolean }[]> = {
-  1: [
-    { id: 1, name: "Alice", online: true },
-    { id: 2, name: "Bob", online: true },
-    { id: 3, name: "Charlie", online: false },
-    { id: 4, name: "Diana", online: true },
-    { id: 5, name: "Eve", online: false },
-  ],
-  2: [
-    { id: 1, name: "Alice", online: false },
-    { id: 2, name: "Bob", online: true },
-    { id: 6, name: "Frank", online: true },
-  ],
-  3: [
-    { id: 1, name: "Alice", online: true },
-    { id: 4, name: "Diana", online: true },
-    { id: 7, name: "Grace", online: false },
-  ],
-  4: [
-    { id: 2, name: "Bob", online: true },
-    { id: 3, name: "Charlie", online: true },
-    { id: 6, name: "Frank", online: false },
-  ],
-  5: [
-    { id: 3, name: "Charlie", online: false },
-    { id: 5, name: "Eve", online: true },
-    { id: 7, name: "Grace", online: true },
-  ],
-};
-
-const INITIAL_MESSAGES: Record<
-  number,
-  { id: number; author: string; content: string }[]
-> = {
-  1: [
-    { id: 1, author: "Alice", content: "Hey everyone!" },
-    { id: 2, author: "Bob", content: "Hello Alice!" },
-    { id: 3, author: "Charlie", content: "What's up?" },
-  ],
-  2: [
-    { id: 1, author: "Bob", content: "Anyone want to play games?" },
-    { id: 2, author: "Frank", content: "Sure, I'm in!" },
-  ],
-  3: [{ id: 1, author: "Alice", content: "Important update incoming!" }],
-  4: [{ id: 1, author: "Bob", content: "How do I fix this error?" }],
-  5: [{ id: 1, author: "Eve", content: "Random meme incoming..." }],
-};
-
 export default function ChatApp() {
   const controller = new RoomsController();
-  const activeUser: User = new User(JSON.parse(localStorage.getItem('profile')!))
+  const activeUser: User = new User(
+    JSON.parse(localStorage.getItem("profile")!),
+  );
   const [open, setOpen] = useState<boolean>(false);
   const [editOpen, setEditOpen] = useState<boolean>(false);
   const { ws, isConnected } = useWS();
 
   const [selectedRoom, setSelectedRoom] = useState<number>(1);
-  // const [messages, setMessages] = useState(INITIAL_MESSAGES);
   const [input, setInput] = useState("");
   const [rooms, setRooms] = useState<Room[]>([]);
-  const [messages, setMessages] = useState<Record<number, Message[]>>({})
+  const [messages, setMessages] = useState<Record<number, Message[]>>({});
   const [users, setUsers] = useState<Record<number, RoomUser[]>>({});
   const [subscribedRooms, setSubscribedRooms] = useState<Room[]>([]);
 
   const joinRoom = async () => {
-    ws.emit('join_room', selectedRoom);
+    ws.emit("join_room", selectedRoom);
     ws.emit("messages.suscribe", { id: selectedRoom });
-    ws.on(`users.room.updated.room_${selectedRoom}`, (users) => getUsersFromRoom(selectedRoom, users));
+    ws.on(`users.room.updated.room_${selectedRoom}`, (users) =>
+      getUsersFromRoom(selectedRoom, users),
+    );
 
-    const newRoom = rooms.find(r => r.id == selectedRoom);
+    const newRoom = rooms.find((r) => r.id == selectedRoom);
     if (newRoom == undefined) return;
-    setSubscribedRooms(prev => [...prev, newRoom]);
-  }
+    setSubscribedRooms((prev) => [...prev, newRoom]);
+  };
 
   const exitRoom = async () => {
-    ws.emit('left_room', selectedRoom);
-    window.location.reload()
-  }
+    ws.emit("left_room", selectedRoom);
+    window.location.reload();
+  };
 
   const handleCreateRoom = async (name: string, description: string) => {
     await controller.createRoom(name, description);
-    window.location.reload()
-    // ws.emit("messages.suscribe", { id: createdRoom.id });
-    // ws.on(`users.room.updated.room_${createdRoom.id}`, (users) => getUsersFromRoom(createdRoom.id, users));
-    // setSubscribedRooms(prev => [...prev, createdRoom])
-  }
+    window.location.reload();
+  };
 
   const handleUpdateRoom = async (name: string, description: string) => {
-    const toBeUpdatedRoom = rooms.find(r => r.id == selectedRoom);
+    const toBeUpdatedRoom = rooms.find((r) => r.id == selectedRoom);
     if (toBeUpdatedRoom == undefined) return;
     await controller.updateRoom(name, description, toBeUpdatedRoom);
-  }
+  };
 
   const getInitialRooms = (data: IRoomMap[]) => {
-    const newRooms = data.map(r => Room.fromMap(r));
-    console.log("cuales son las rooms", data, newRooms);
+    const newRooms = data.map((r) => Room.fromMap(r));
     setRooms(newRooms);
-  }
+  };
+
   const getNewRoom = (room: IRoomMap) => {
-    setRooms(prev => [...prev, Room.fromMap(room)]);
-  }
+    setRooms((prev) => [...prev, Room.fromMap(room)]);
+  };
 
   const updateRoom = (room: IRoomMap) => {
     const updatedRoom = Room.fromMap(room);
-    setRooms(prev => {
-      const newArr = [...prev]
-      const toBeUpdatedRoom = prev.find(r => r.id == updatedRoom.id);
+    setRooms((prev) => {
+      const newArr = [...prev];
+      const toBeUpdatedRoom = prev.find((r) => r.id == updatedRoom.id);
       if (toBeUpdatedRoom == undefined) return prev;
       const toBeUpdatedRoomIndex = prev.indexOf(toBeUpdatedRoom);
       if (toBeUpdatedRoomIndex < 0) return prev;
       newArr[toBeUpdatedRoomIndex] = updatedRoom;
-      return newArr
-    })
-  }
+      return newArr;
+    });
+  };
+
   const getUsersFromRoom = async (roomId: number, data: any[]) => {
-    const roomUsers: RoomUser[] = data.map(u => ({
-      active: u['online'], user: new User({ id: u['id'], username: u['userName'], email: u['email'] })
-    }))
-    setUsers(prev => ({
+    const roomUsers: RoomUser[] = data.map((u) => ({
+      active: u["online"],
+      user: new User({
+        id: u["id"],
+        username: u["userName"],
+        email: u["email"],
+      }),
+    }));
+    setUsers((prev) => ({
       ...prev,
-      [roomId]: roomUsers
-    }))
-  }
+      [roomId]: roomUsers,
+    }));
+  };
+
   const getNewMessage = (message: IMessageMap | IMessageMap[]) => {
     if (Array.isArray(message)) {
       console.log("es array");
-      // (we can fix this part too if needed)
     } else {
-      console.log("es object");
       const newMessage = Message.fromMap(message);
-
-      setMessages(prev => ({
+      setMessages((prev) => ({
         ...prev,
-        [newMessage.roomId]: [
-          ...(prev[newMessage.roomId] ?? []),
-          newMessage
-        ]
+        [newMessage.roomId]: [...(prev[newMessage.roomId] ?? []), newMessage],
       }));
     }
   };
+
   useEffect(() => {
-    console.log("el active user manito", activeUser);
     const init = async () => {
-      console.warn("Debug: Cleaning up WebSocket event listener.");
-      if (!isConnected) return; // todavía no hay socket conectado
-      const subscribedRooms = await controller.getRoomsByUser()
+      if (!isConnected) return;
+      const subscribedRooms = await controller.getRoomsByUser();
       setSubscribedRooms(subscribedRooms);
-      console.log("useEffect chatApp? isConnected:", isConnected);
       ws.emit("get_rooms");
 
-      subscribedRooms.forEach(r => {
+      subscribedRooms.forEach((r) => {
         ws.emit("users.room.subscribe", r.id);
         ws.emit("messages.suscribe", { id: r.id });
-        ws.on(`users.room.updated.room_${r.id}`, (users) => getUsersFromRoom(r.id, users));
-      })
+        ws.on(`users.room.updated.room_${r.id}`, (users) =>
+          getUsersFromRoom(r.id, users),
+        );
+      });
       ws.on("rooms_list", getInitialRooms);
       ws.on("room_created", getNewRoom);
       ws.on("room_updated", updateRoom);
       ws.on("messages.suscription", getNewMessage);
-    }
+    };
     init();
 
     return () => {
       ws.socket?.off("rooms_list", getInitialRooms);
       ws.socket?.off("room_created");
       ws.socket?.off("messages.suscription");
-    }
-  }, [isConnected]); // 👈 se ejecuta cuando cambie estado de conexión
+    };
+  }, [isConnected]);
 
   const handleSendMessage = () => {
-    console.log("estoy mandando a ", {
-      roomId: selectedRoom,
-      message: input
-    })
     if (input.trim()) {
       ws.emit("users-send.message", {
         roomId: selectedRoom,
-        message: input
-      })
+        message: input,
+      });
+      setInput("");
     }
   };
 
-  const currentRoom = rooms.find(r => r.id === selectedRoom);
+  const currentRoom = rooms.find((r) => r.id === selectedRoom);
   const currentUsers = users[selectedRoom] || [];
   const currentMessages = messages[selectedRoom] || [];
 
@@ -223,113 +165,220 @@ export default function ChatApp() {
       sx={{
         display: "flex",
         height: "100vh",
-        bgcolor: "#36393f",
+        background: "linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)",
         width: "100vw",
         overflow: "hidden",
       }}
     >
-      {/* Left Sidebar - Rooms */}
       <Drawer
         variant="permanent"
-        // variant={{ xs: 'temporary', md: 'permanent' }}
         open
         sx={{
           width: { xs: "60vw", sm: "35vw", md: "240px" },
           flexShrink: 0,
           "& .MuiDrawer-paper": {
             width: { xs: "60vw", sm: "35vw", md: "240px" },
-            bgcolor: "#2f3136",
-            border: "none",
+            background: "linear-gradient(180deg, #2d2d3d 0%, #1e1e2e 100%)",
+            border: "1px solid rgba(255, 255, 255, 0.05)",
+            backdropFilter: "blur(10px)",
           },
         }}
       >
         <Box sx={{ p: 2 }}>
-          <Typography variant="h6" sx={{ color: "#fff", fontWeight: "bold" }}>
-            Rooms
+          <Typography
+            variant="h6"
+            sx={{
+              color: "#fff",
+              fontWeight: 700,
+              fontSize: "1.1rem",
+              letterSpacing: "0.5px",
+              textTransform: "uppercase",
+            }}
+          >
+            💬 Salas
           </Typography>
         </Box>
-        <Divider sx={{ bgcolor: "#202225" }} />
+        <Divider sx={{ bgcolor: "rgba(255, 255, 255, 0.1)" }} />
         <List sx={{ p: 0 }}>
-          {rooms.map((room) => (
-            <ListItemButton
-              key={room.id}
-              selected={selectedRoom === room.id}
-              onClick={() => {
-                console.log("le estoy dando a esta gonorrea", room)
-                setSelectedRoom(room.id)
-              }}
-              sx={{
-                color: selectedRoom === room.id ? "#fff" : subscribedRooms.some(r => r.id == room.id) ? "#b9bbbe" : "red",
-                bgcolor: selectedRoom === room.id ? "#2c2f33" : "transparent",
-                "&:hover": {
-                  bgcolor: "#2c2f33",
-                  color: "#fff",
-                },
-                py: 1.5,
-                px: 2,
-              }}
-            >
-              <ListItemText
-                primary={`# ${room.name} `}
-                primaryTypographyProps={{
-                  sx: {
-                    fontWeight: selectedRoom === room.id ? "bold" : "normal",
+          {rooms.map((room) => {
+            const isSubscribed = subscribedRooms.some((r) => r.id == room.id);
+            return (
+              <ListItemButton
+                key={room.id}
+                selected={selectedRoom === room.id}
+                onClick={() => setSelectedRoom(room.id)}
+                sx={{
+                  color:
+                    selectedRoom === room.id
+                      ? "#fff"
+                      : isSubscribed
+                        ? "#b9bbbe"
+                        : "#ff6b6b",
+                  bgcolor:
+                    selectedRoom === room.id
+                      ? "rgba(124, 92, 255, 0.2)"
+                      : "transparent",
+                  borderLeft:
+                    selectedRoom === room.id
+                      ? "3px solid #7c5cff"
+                      : "3px solid transparent",
+                  transition: "all 0.3s ease",
+                  "&:hover": {
+                    bgcolor: "rgba(124, 92, 255, 0.15)",
+                    color: "#fff",
                   },
+                  py: 1.5,
+                  px: 2,
                 }}
-              />
-            </ListItemButton>
-          ))}
+              >
+                <ListItemText
+                  primary={`# ${room.name}`}
+                  primaryTypographyProps={{
+                    sx: {
+                      fontWeight: selectedRoom === room.id ? 600 : 500,
+                      fontSize: "0.95rem",
+                    },
+                  }}
+                />
+              </ListItemButton>
+            );
+          })}
         </List>
-        <Box height={'100%'} />
-        <Box display={'flex'} flexDirection={'row'} justifyContent={'space-between'} width={'100%'}>
-          <Button sx={{ backgroundColor: "cyan" }} variant="contained" onClick={() => setOpen(prev => !prev)}>Crear</Button>
-          <Button variant="outlined" sx={{ color: 'white' }} onClick={() => {
-            localStorage.removeItem('token');
-            window.location.reload()
-          }}>Salir</Button>
+        <Box flexGrow={1} />
+
+        <Box
+          display="flex"
+          flexDirection="row"
+          gap={1}
+          p={2}
+          sx={{
+            borderTop: "1px solid rgba(255, 255, 255, 0.1)",
+          }}
+        >
+          <Button
+            variant="contained"
+            onClick={() => setOpen((prev) => !prev)}
+            sx={{
+              flex: 1,
+              background: "linear-gradient(90deg, #7c5cff 0%, #5f40e8 100%)",
+              color: "#fff",
+              textTransform: "none",
+              fontWeight: 600,
+              borderRadius: "6px",
+              transition: "all 0.3s ease",
+              "&:hover": {
+                transform: "translateY(-2px)",
+                boxShadow: "0 8px 20px rgba(124, 92, 255, 0.3)",
+              },
+            }}
+          >
+            + Nueva
+          </Button>
+          <Button
+            variant="outlined"
+            onClick={() => {
+              localStorage.removeItem("token");
+              window.location.reload();
+            }}
+            sx={{
+              flex: 1,
+              color: "#ff6b6b",
+              borderColor: "rgba(255, 107, 107, 0.3)",
+              textTransform: "none",
+              fontWeight: 600,
+              borderRadius: "6px",
+              transition: "all 0.3s ease",
+              "&:hover": {
+                bgcolor: "rgba(255, 107, 107, 0.1)",
+                borderColor: "#ff6b6b",
+              },
+            }}
+          >
+            Salir
+          </Button>
         </Box>
       </Drawer>
 
-      {/* Center - Chat Area */}
       <Box
         sx={{
           width: "100%",
           flex: 1,
           display: "flex",
           flexDirection: "column",
-          // justifyContent: 'start',
-          bgcolor: "#36393f",
+          bgcolor: "transparent",
         }}
       >
         {/* Header */}
         <Box
-          // border={'solid'}
           sx={{
-            // flex: 1,
-            width: "100%", // 240px + 240px sidebars
+            width: "100%",
             height: "10%",
             display: "flex",
             flexDirection: "row",
             alignItems: "center",
-            justifyContent: 'space-between'
+            justifyContent: "space-between",
+            p: 2,
+            borderBottom: "1px solid rgba(255, 255, 255, 0.05)",
+            backdropFilter: "blur(10px)",
           }}
         >
-          <Typography variant="h6" sx={{ color: "#fff", fontWeight: "bold" }}>
-            # {currentRoom?.name} {!subscribedRooms.some(r => r.id == selectedRoom) ? "(No pertenece)" : ""}
+          <Typography
+            variant="h6"
+            sx={{
+              color: "#fff",
+              fontWeight: 700,
+              fontSize: "1.15rem",
+            }}
+          >
+            # {currentRoom?.name}{" "}
+            {!subscribedRooms.some((r) => r.id == selectedRoom)
+              ? "(No pertenece)"
+              : ""}
           </Typography>
-          <Box
-            display={'flex'}
-            justifyContent={'space-between'}
-            flexDirection={'column'}>
-
-            {rooms.find(r => r.id == selectedRoom)?.ownerId == activeUser.id &&
-              <Button onClick={() => setEditOpen(true)} variant="outlined" sx={{ backgroundColor: '#8050ea', color: "white" }}>Editar sala</Button>
-            }
-            {
-              subscribedRooms.some(r => r.id == selectedRoom) &&
-              <Button onClick={exitRoom} variant="outlined" sx={{ backgroundColor: 'red', color: "white" }}>Salir de sala</Button>
-            }
-
+          <Box display="flex" gap={1} flexDirection="row">
+            {rooms.find((r) => r.id == selectedRoom)?.ownerId ===
+              activeUser.id && (
+              <Button
+                onClick={() => setEditOpen(true)}
+                variant="outlined"
+                sx={{
+                  background:
+                    "linear-gradient(90deg, #ff8a5b 0%, #ff6b35 100%)",
+                  color: "#fff",
+                  textTransform: "none",
+                  fontWeight: 600,
+                  borderRadius: "6px",
+                  border: "none",
+                  transition: "all 0.3s ease",
+                  "&:hover": {
+                    transform: "translateY(-2px)",
+                    boxShadow: "0 8px 20px rgba(255, 107, 53, 0.3)",
+                  },
+                }}
+              >
+                Editar
+              </Button>
+            )}
+            {subscribedRooms.some((r) => r.id == selectedRoom) && (
+              <Button
+                onClick={exitRoom}
+                variant="outlined"
+                sx={{
+                  color: "#ff6b6b",
+                  borderColor: "rgba(255, 107, 107, 0.3)",
+                  textTransform: "none",
+                  fontWeight: 600,
+                  borderRadius: "6px",
+                  transition: "all 0.3s ease",
+                  "&:hover": {
+                    bgcolor: "rgba(255, 107, 107, 0.1)",
+                    borderColor: "#ff6b6b",
+                  },
+                }}
+              >
+                Salir
+              </Button>
+            )}
           </Box>
         </Box>
 
@@ -338,69 +387,120 @@ export default function ChatApp() {
           sx={{
             flex: 1,
             overflowY: "auto",
-            p: 2,
+            p: 3,
             display: "flex",
             flexDirection: "column",
-            gap: 1,
+            gap: 2,
+            "&::-webkit-scrollbar": {
+              width: "8px",
+            },
+            "&::-webkit-scrollbar-track": {
+              bgcolor: "transparent",
+            },
+            "&::-webkit-scrollbar-thumb": {
+              bgcolor: "rgba(255, 255, 255, 0.1)",
+              borderRadius: "4px",
+              "&:hover": {
+                bgcolor: "rgba(255, 255, 255, 0.2)",
+              },
+            },
           }}
         >
-          {subscribedRooms.some(r => r.id == selectedRoom) && currentMessages.map((msg) => (
-            <Box key={msg.id} sx={{ display: "flex", gap: 2 }}>
-              <Avatar
+          {subscribedRooms.some((r) => r.id == selectedRoom) &&
+            currentMessages.map((msg) => (
+              <Box
+                key={msg.id}
                 sx={{
-                  bgcolor: "#5865F2",
-                  width: 40,
-                  height: 40,
+                  display: "flex",
+                  gap: 2,
+                  animation: "slideIn 0.3s ease",
+                  "@keyframes slideIn": {
+                    "0%": { opacity: 0, transform: "translateY(10px)" },
+                    "100%": { opacity: 1, transform: "translateY(0)" },
+                  },
                 }}
               >
-                {msg.userId}
-              </Avatar>
-              <Box sx={{ flex: 1 }}>
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                <Avatar
+                  sx={{
+                    background:
+                      "linear-gradient(135deg, #7c5cff 0%, #5f40e8 100%)",
+                    width: 40,
+                    height: 40,
+                    fontWeight: 700,
+                    fontSize: "1rem",
+                  }}
+                >
+                  {msg.userId.toString()[0]}
+                </Avatar>
+                <Box sx={{ flex: 1 }}>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        color: "#fff",
+                        fontWeight: 600,
+                        fontSize: "0.95rem",
+                      }}
+                    >
+                      User #{msg.userId}
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: "#8d8d9d" }}>
+                      12:34 PM
+                    </Typography>
+                  </Box>
                   <Typography
                     variant="body2"
                     sx={{
-                      color: "#fff",
-                      fontWeight: "bold",
+                      color: "#dcddde",
+                      mt: 0.5,
+                      fontSize: "0.95rem",
+                      lineHeight: 1.5,
                     }}
                   >
-                    {msg.userId}
-                  </Typography>
-                  <Typography variant="caption" sx={{ color: "#72767d" }}>
-                    12:34 PM
+                    {msg.message}
                   </Typography>
                 </Box>
-                <Typography
-                  variant="body2"
-                  sx={{
-                    color: "#dcddde",
-                    mt: 0.5,
-                  }}
-                >
-                  {msg.message}
-                </Typography>
               </Box>
-            </Box>
-          ))}
+            ))}
         </Box>
 
-        {/* Message Input */}
-
-        {!subscribedRooms.some(r => r.id == selectedRoom) &&
-          <Button onClick={joinRoom}>Unirse</Button>
-        }
-        {subscribedRooms.some(r => r.id == selectedRoom) &&
+        {/* Message Input Area */}
+        {!subscribedRooms.some((r) => r.id == selectedRoom) ? (
+          <Box sx={{ p: 3, textAlign: "center" }}>
+            <Button
+              onClick={joinRoom}
+              variant="contained"
+              sx={{
+                background: "linear-gradient(90deg, #7c5cff 0%, #5f40e8 100%)",
+                color: "#fff",
+                textTransform: "none",
+                fontSize: "0.95rem",
+                fontWeight: 600,
+                borderRadius: "6px",
+                px: 3,
+                py: 1.2,
+                transition: "all 0.3s ease",
+                "&:hover": {
+                  transform: "translateY(-2px)",
+                  boxShadow: "0 10px 25px rgba(124, 92, 255, 0.4)",
+                },
+              }}
+            >
+              Unirse a la sala
+            </Button>
+          </Box>
+        ) : (
           <Box
             sx={{
               p: 2,
-              bgcolor: "#36393f",
-              borderTop: "1px solid #202225",
+              borderTop: "1px solid rgba(255, 255, 255, 0.05)",
+              backdropFilter: "blur(10px)",
             }}
           >
             <Box sx={{ display: "flex", gap: 1 }}>
               <TextField
                 fullWidth
-                placeholder="Message #general"
+                placeholder={`Mensaje en #${currentRoom?.name}`}
                 variant="outlined"
                 size="small"
                 value={input}
@@ -414,19 +514,22 @@ export default function ChatApp() {
                 sx={{
                   "& .MuiOutlinedInput-root": {
                     color: "#dcddde",
-                    bgcolor: "#40444b",
+                    bgcolor: "#2d2d3d",
+                    borderRadius: "8px",
+                    transition: "all 0.3s ease",
                     "& fieldset": {
-                      borderColor: "#202225",
+                      borderColor: "rgba(255, 255, 255, 0.1)",
                     },
                     "&:hover fieldset": {
-                      borderColor: "#202225",
+                      borderColor: "rgba(124, 92, 255, 0.5)",
                     },
                     "&.Mui-focused fieldset": {
-                      borderColor: "#5865F2",
+                      borderColor: "#7c5cff",
+                      borderWidth: 1.5,
                     },
                   },
                   "& .MuiOutlinedInput-input::placeholder": {
-                    color: "#72767d",
+                    color: "#8d8d9d",
                     opacity: 1,
                   },
                 }}
@@ -434,9 +537,14 @@ export default function ChatApp() {
               <IconButton
                 onClick={handleSendMessage}
                 sx={{
-                  color: "#5865F2",
+                  color: "#7c5cff",
+                  bgcolor: "rgba(124, 92, 255, 0.1)",
+                  borderRadius: "8px",
+                  transition: "all 0.3s ease",
                   "&:hover": {
-                    color: "#7289da",
+                    color: "#fff",
+                    bgcolor: "rgba(124, 92, 255, 0.2)",
+                    transform: "scale(1.05)",
                   },
                 }}
               >
@@ -444,10 +552,9 @@ export default function ChatApp() {
               </IconButton>
             </Box>
           </Box>
-        }
+        )}
       </Box>
 
-      {/* Right Sidebar - Users */}
       <Drawer
         variant="permanent"
         anchor="right"
@@ -457,65 +564,82 @@ export default function ChatApp() {
           flexShrink: 0,
           "& .MuiDrawer-paper": {
             width: { xs: "60vw", sm: "35vw", md: "240px" },
-            bgcolor: "#2f3136",
-            border: "none",
+            background: "linear-gradient(180deg, #2d2d3d 0%, #1e1e2e 100%)",
+            border: "1px solid rgba(255, 255, 255, 0.05)",
+            backdropFilter: "blur(10px)",
           },
         }}
       >
         <Box sx={{ p: 2 }}>
-          <Typography variant="h6" sx={{ color: "#fff", fontWeight: "bold" }}>
-            Users
+          <Typography
+            variant="h6"
+            sx={{
+              color: "#fff",
+              fontWeight: 700,
+              fontSize: "1.1rem",
+              letterSpacing: "0.5px",
+              textTransform: "uppercase",
+            }}
+          >
+            👥 Usuarios
           </Typography>
         </Box>
-        <Divider sx={{ bgcolor: "#202225" }} />
+        <Divider sx={{ bgcolor: "rgba(255, 255, 255, 0.1)" }} />
         <List sx={{ p: 0 }}>
           {currentUsers.map((user) => (
             <ListItem
               key={user.user.id}
               sx={{
                 px: 2,
-                py: 1,
+                py: 1.5,
                 bgcolor: user.active
-                  ? "rgba(88, 101, 242, 0.1)"
+                  ? "rgba(124, 92, 255, 0.1)"
                   : "transparent",
+                borderLeft: user.active
+                  ? "3px solid #43B581"
+                  : "3px solid transparent",
+                transition: "all 0.3s ease",
+                "&:hover": {
+                  bgcolor: "rgba(124, 92, 255, 0.15)",
+                },
               }}
             >
               <ListItemAvatar>
                 <Avatar
                   sx={{
-                    width: 32,
-                    height: 32,
-                    bgcolor: user.active ? "#43B581" : "#747f8d",
-                    position: "relative",
+                    width: 36,
+                    height: 36,
+                    background: user.active
+                      ? "linear-gradient(135deg, #43B581 0%, #2ecc71 100%)"
+                      : "linear-gradient(135deg, #747f8d 0%, #5d6d7b 100%)",
+                    fontWeight: 700,
+                    fontSize: "0.9rem",
                   }}
                 >
-                  {user.user.username[0]}
-                  {user.active && (
-                    <Box
-                      sx={{
-                        position: "absolute",
-                        bottom: -2,
-                        right: -2,
-                        width: 10,
-                        height: 10,
-                        bgcolor: "#43B581",
-                        borderRadius: "50%",
-                        border: "2px solid #2f3136",
-                      }}
-                    />
-                  )}
+                  {user.user.username[0].toUpperCase()}
                 </Avatar>
               </ListItemAvatar>
-              <ListItemText primary={user.user.username} />
+              <ListItemText
+                primary={user.user.username}
+                primaryTypographyProps={{
+                  sx: {
+                    fontWeight: 500,
+                    fontSize: "0.9rem",
+                    color: "#fff",
+                  },
+                }}
+              />
               {user.active && (
                 <Chip
                   label="Online"
                   size="small"
                   sx={{
                     height: 20,
-                    bgcolor: "#43B581",
+                    background:
+                      "linear-gradient(90deg, #43B581 0%, #2ecc71 100%)",
                     color: "#fff",
-                    fontSize: "0.7rem",
+                    fontSize: "0.65rem",
+                    fontWeight: 600,
                   }}
                 />
               )}
@@ -523,13 +647,17 @@ export default function ChatApp() {
           ))}
         </List>
       </Drawer>
+
       <SimpleFormDialog
         open={open}
         onClose={() => setOpen(false)}
         onSubmit={handleCreateRoom}
       />
-      <UpdateRoomDialog open={editOpen} onClose={() => setEditOpen(false)} onUpdate={handleUpdateRoom} />
+      <UpdateRoomDialog
+        open={editOpen}
+        onClose={() => setEditOpen(false)}
+        onUpdate={handleUpdateRoom}
+      />
     </Box>
-
   );
 }
