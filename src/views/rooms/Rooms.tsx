@@ -10,7 +10,6 @@ import {
   IconButton,
   Divider,
   Avatar,
-  Chip,
   Typography,
   ListItemAvatar,
   Button,
@@ -165,22 +164,25 @@ export default function ChatApp() {
       sx={{
         display: "flex",
         height: "100vh",
-        background: "linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)",
+        background: "#0f0f0f",
         width: "100vw",
         overflow: "hidden",
       }}
     >
+      {/* Left Sidebar - Rooms List */}
       <Drawer
         variant="permanent"
         open
         sx={{
-          width: { xs: "60vw", sm: "35vw", md: "240px" },
+          width: { xs: "0px", sm: "280px", md: "280px" },
           flexShrink: 0,
+          display: { xs: "none", sm: "block" },
           "& .MuiDrawer-paper": {
-            width: { xs: "60vw", sm: "35vw", md: "240px" },
-            background: "linear-gradient(180deg, #2d2d3d 0%, #1e1e2e 100%)",
-            border: "1px solid rgba(255, 255, 255, 0.05)",
-            backdropFilter: "blur(10px)",
+            width: "280px",
+            background: "#121212",
+            border: "1px solid #1a1a1a",
+            backdropFilter: "none",
+            overflowY: "auto",
           },
         }}
       >
@@ -188,17 +190,17 @@ export default function ChatApp() {
           <Typography
             variant="h6"
             sx={{
-              color: "#fff",
-              fontWeight: 700,
-              fontSize: "1.1rem",
-              letterSpacing: "0.5px",
+              color: "#888888",
+              fontWeight: 600,
+              fontSize: "0.85rem",
+              letterSpacing: "0.8px",
               textTransform: "uppercase",
             }}
           >
-            💬 Salas
+            Channels
           </Typography>
         </Box>
-        <Divider sx={{ bgcolor: "rgba(255, 255, 255, 0.1)" }} />
+        <Divider sx={{ bgcolor: "#1a1a1a" }} />
         <List sx={{ p: 0 }}>
           {rooms.map((room) => {
             const isSubscribed = subscribedRooms.some((r) => r.id == room.id);
@@ -210,24 +212,21 @@ export default function ChatApp() {
                 sx={{
                   color:
                     selectedRoom === room.id
-                      ? "#fff"
+                      ? "#ffffff"
                       : isSubscribed
-                        ? "#b9bbbe"
-                        : "#ff6b6b",
-                  bgcolor:
-                    selectedRoom === room.id
-                      ? "rgba(124, 92, 255, 0.2)"
-                      : "transparent",
+                        ? "#888888"
+                        : "#555555",
+                  bgcolor: selectedRoom === room.id ? "#1a1a1a" : "transparent",
                   borderLeft:
                     selectedRoom === room.id
-                      ? "3px solid #7c5cff"
-                      : "3px solid transparent",
-                  transition: "all 0.3s ease",
+                      ? "2px solid #00d4ff"
+                      : "2px solid transparent",
+                  transition: "all 0.2s ease",
                   "&:hover": {
-                    bgcolor: "rgba(124, 92, 255, 0.15)",
-                    color: "#fff",
+                    bgcolor: "#1a1a1a",
+                    color: "#ffffff",
                   },
-                  py: 1.5,
+                  py: 1,
                   px: 2,
                 }}
               >
@@ -235,8 +234,8 @@ export default function ChatApp() {
                   primary={`# ${room.name}`}
                   primaryTypographyProps={{
                     sx: {
-                      fontWeight: selectedRoom === room.id ? 600 : 500,
-                      fontSize: "0.95rem",
+                      fontWeight: 500,
+                      fontSize: "0.9rem",
                     },
                   }}
                 />
@@ -248,160 +247,155 @@ export default function ChatApp() {
 
         <Box
           display="flex"
-          flexDirection="row"
+          flexDirection="column"
           gap={1}
           p={2}
           sx={{
-            borderTop: "1px solid rgba(255, 255, 255, 0.1)",
+            borderTop: "1px solid #1a1a1a",
           }}
         >
           <Button
             variant="contained"
             onClick={() => setOpen((prev) => !prev)}
             sx={{
-              flex: 1,
-              background: "linear-gradient(90deg, #7c5cff 0%, #5f40e8 100%)",
-              color: "#fff",
+              background: "#00d4ff",
+              color: "#000000",
               textTransform: "none",
               fontWeight: 600,
-              borderRadius: "6px",
-              transition: "all 0.3s ease",
+              borderRadius: "4px",
+              fontSize: "0.9rem",
+              transition: "all 0.2s ease",
               "&:hover": {
-                transform: "translateY(-2px)",
-                boxShadow: "0 8px 20px rgba(124, 92, 255, 0.3)",
+                background: "#00b8cc",
+                transform: "translateY(-1px)",
               },
             }}
           >
-            + Nueva
+            New Channel
           </Button>
           <Button
-            variant="outlined"
+            variant="text"
             onClick={() => {
               localStorage.removeItem("token");
               window.location.reload();
             }}
             sx={{
-              flex: 1,
-              color: "#ff6b6b",
-              borderColor: "rgba(255, 107, 107, 0.3)",
+              color: "#888888",
               textTransform: "none",
-              fontWeight: 600,
-              borderRadius: "6px",
-              transition: "all 0.3s ease",
+              fontWeight: 500,
+              fontSize: "0.9rem",
+              transition: "all 0.2s ease",
               "&:hover": {
-                bgcolor: "rgba(255, 107, 107, 0.1)",
-                borderColor: "#ff6b6b",
+                color: "#ffffff",
+                bgcolor: "#1a1a1a",
               },
             }}
           >
-            Salir
+            Logout
           </Button>
         </Box>
       </Drawer>
 
+      {/* Main Chat Area */}
       <Box
         sx={{
           width: "100%",
           flex: 1,
           display: "flex",
           flexDirection: "column",
-          bgcolor: "transparent",
+          bgcolor: "#0f0f0f",
         }}
       >
         {/* Header */}
         <Box
           sx={{
             width: "100%",
-            height: "10%",
+            height: { xs: "60px", md: "70px" },
             display: "flex",
             flexDirection: "row",
             alignItems: "center",
             justifyContent: "space-between",
-            p: 2,
-            borderBottom: "1px solid rgba(255, 255, 255, 0.05)",
-            backdropFilter: "blur(10px)",
+            p: { xs: "1.5", md: "2" },
+            borderBottom: "1px solid #1a1a1a",
+            backdropFilter: "none",
           }}
         >
           <Typography
             variant="h6"
             sx={{
-              color: "#fff",
-              fontWeight: 700,
-              fontSize: "1.15rem",
+              color: "#ffffff",
+              fontWeight: 600,
+              fontSize: { xs: "1rem", md: "1.15rem" },
             }}
           >
-            # {currentRoom?.name}{" "}
-            {!subscribedRooms.some((r) => r.id == selectedRoom)
-              ? "(No pertenece)"
-              : ""}
+            # {currentRoom?.name}
           </Typography>
           <Box display="flex" gap={1} flexDirection="row">
             {rooms.find((r) => r.id == selectedRoom)?.ownerId ===
               activeUser.id && (
               <Button
                 onClick={() => setEditOpen(true)}
-                variant="outlined"
+                variant="text"
                 sx={{
-                  background:
-                    "linear-gradient(90deg, #ff8a5b 0%, #ff6b35 100%)",
-                  color: "#fff",
+                  color: "#00d4ff",
                   textTransform: "none",
-                  fontWeight: 600,
-                  borderRadius: "6px",
-                  border: "none",
-                  transition: "all 0.3s ease",
+                  fontWeight: 500,
+                  fontSize: { xs: "0.8rem", md: "0.9rem" },
+                  border: "1px solid #00d4ff",
+                  borderRadius: "4px",
+                  transition: "all 0.2s ease",
                   "&:hover": {
-                    transform: "translateY(-2px)",
-                    boxShadow: "0 8px 20px rgba(255, 107, 53, 0.3)",
+                    bgcolor: "rgba(0, 212, 255, 0.1)",
                   },
                 }}
               >
-                Editar
+                Edit
               </Button>
             )}
             {subscribedRooms.some((r) => r.id == selectedRoom) && (
               <Button
                 onClick={exitRoom}
-                variant="outlined"
+                variant="text"
                 sx={{
-                  color: "#ff6b6b",
-                  borderColor: "rgba(255, 107, 107, 0.3)",
+                  color: "#888888",
                   textTransform: "none",
-                  fontWeight: 600,
-                  borderRadius: "6px",
-                  transition: "all 0.3s ease",
+                  fontWeight: 500,
+                  fontSize: { xs: "0.8rem", md: "0.9rem" },
+                  border: "1px solid #333333",
+                  borderRadius: "4px",
+                  transition: "all 0.2s ease",
                   "&:hover": {
-                    bgcolor: "rgba(255, 107, 107, 0.1)",
-                    borderColor: "#ff6b6b",
+                    color: "#ffffff",
+                    borderColor: "#555555",
                   },
                 }}
               >
-                Salir
+                Leave
               </Button>
             )}
           </Box>
         </Box>
 
-        {/* Messages */}
+        {/* Messages Area */}
         <Box
           sx={{
             flex: 1,
             overflowY: "auto",
-            p: 3,
+            p: { xs: 2, md: 3 },
             display: "flex",
             flexDirection: "column",
             gap: 2,
             "&::-webkit-scrollbar": {
-              width: "8px",
+              width: "6px",
             },
             "&::-webkit-scrollbar-track": {
               bgcolor: "transparent",
             },
             "&::-webkit-scrollbar-thumb": {
-              bgcolor: "rgba(255, 255, 255, 0.1)",
-              borderRadius: "4px",
+              bgcolor: "#333333",
+              borderRadius: "3px",
               "&:hover": {
-                bgcolor: "rgba(255, 255, 255, 0.2)",
+                bgcolor: "#444444",
               },
             },
           }}
@@ -415,45 +409,49 @@ export default function ChatApp() {
                   gap: 2,
                   animation: "slideIn 0.3s ease",
                   "@keyframes slideIn": {
-                    "0%": { opacity: 0, transform: "translateY(10px)" },
+                    "0%": { opacity: 0, transform: "translateY(8px)" },
                     "100%": { opacity: 1, transform: "translateY(0)" },
                   },
                 }}
               >
                 <Avatar
                   sx={{
-                    background:
-                      "linear-gradient(135deg, #7c5cff 0%, #5f40e8 100%)",
-                    width: 40,
-                    height: 40,
-                    fontWeight: 700,
-                    fontSize: "1rem",
+                    background: "#1a1a1a",
+                    width: 36,
+                    height: 36,
+                    fontWeight: 600,
+                    fontSize: "0.9rem",
+                    color: "#00d4ff",
+                    border: "1px solid #333333",
                   }}
                 >
                   {msg.userId.toString()[0]}
                 </Avatar>
                 <Box sx={{ flex: 1 }}>
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
                     <Typography
                       variant="body2"
                       sx={{
-                        color: "#fff",
-                        fontWeight: 600,
-                        fontSize: "0.95rem",
+                        color: "#ffffff",
+                        fontWeight: 500,
+                        fontSize: "0.9rem",
                       }}
                     >
                       User #{msg.userId}
                     </Typography>
-                    <Typography variant="caption" sx={{ color: "#8d8d9d" }}>
+                    <Typography
+                      variant="caption"
+                      sx={{ color: "#555555", fontSize: "0.8rem" }}
+                    >
                       12:34 PM
                     </Typography>
                   </Box>
                   <Typography
                     variant="body2"
                     sx={{
-                      color: "#dcddde",
+                      color: "#cccccc",
                       mt: 0.5,
-                      fontSize: "0.95rem",
+                      fontSize: "0.9rem",
                       lineHeight: 1.5,
                     }}
                   >
@@ -471,36 +469,36 @@ export default function ChatApp() {
               onClick={joinRoom}
               variant="contained"
               sx={{
-                background: "linear-gradient(90deg, #7c5cff 0%, #5f40e8 100%)",
-                color: "#fff",
+                background: "#00d4ff",
+                color: "#000000",
                 textTransform: "none",
                 fontSize: "0.95rem",
                 fontWeight: 600,
-                borderRadius: "6px",
+                borderRadius: "4px",
                 px: 3,
                 py: 1.2,
-                transition: "all 0.3s ease",
+                transition: "all 0.2s ease",
                 "&:hover": {
+                  background: "#00b8cc",
                   transform: "translateY(-2px)",
-                  boxShadow: "0 10px 25px rgba(124, 92, 255, 0.4)",
                 },
               }}
             >
-              Unirse a la sala
+              Join Channel
             </Button>
           </Box>
         ) : (
           <Box
             sx={{
-              p: 2,
-              borderTop: "1px solid rgba(255, 255, 255, 0.05)",
-              backdropFilter: "blur(10px)",
+              p: { xs: 1.5, md: 2 },
+              borderTop: "1px solid #1a1a1a",
+              backdropFilter: "none",
             }}
           >
             <Box sx={{ display: "flex", gap: 1 }}>
               <TextField
                 fullWidth
-                placeholder={`Mensaje en #${currentRoom?.name}`}
+                placeholder={`Message #${currentRoom?.name}`}
                 variant="outlined"
                 size="small"
                 value={input}
@@ -513,23 +511,23 @@ export default function ChatApp() {
                 }}
                 sx={{
                   "& .MuiOutlinedInput-root": {
-                    color: "#dcddde",
-                    bgcolor: "#2d2d3d",
-                    borderRadius: "8px",
-                    transition: "all 0.3s ease",
+                    color: "#ffffff",
+                    bgcolor: "#1a1a1a",
+                    borderRadius: "4px",
+                    transition: "all 0.2s ease",
                     "& fieldset": {
-                      borderColor: "rgba(255, 255, 255, 0.1)",
+                      borderColor: "#333333",
                     },
                     "&:hover fieldset": {
-                      borderColor: "rgba(124, 92, 255, 0.5)",
+                      borderColor: "#444444",
                     },
                     "&.Mui-focused fieldset": {
-                      borderColor: "#7c5cff",
-                      borderWidth: 1.5,
+                      borderColor: "#00d4ff",
+                      borderWidth: 1,
                     },
                   },
                   "& .MuiOutlinedInput-input::placeholder": {
-                    color: "#8d8d9d",
+                    color: "#555555",
                     opacity: 1,
                   },
                 }}
@@ -537,14 +535,12 @@ export default function ChatApp() {
               <IconButton
                 onClick={handleSendMessage}
                 sx={{
-                  color: "#7c5cff",
-                  bgcolor: "rgba(124, 92, 255, 0.1)",
-                  borderRadius: "8px",
-                  transition: "all 0.3s ease",
+                  color: "#00d4ff",
+                  bgcolor: "transparent",
+                  borderRadius: "4px",
+                  transition: "all 0.2s ease",
                   "&:hover": {
-                    color: "#fff",
-                    bgcolor: "rgba(124, 92, 255, 0.2)",
-                    transform: "scale(1.05)",
+                    bgcolor: "rgba(0, 212, 255, 0.1)",
                   },
                 }}
               >
@@ -555,18 +551,20 @@ export default function ChatApp() {
         )}
       </Box>
 
+      {/* Right Sidebar - Users List */}
       <Drawer
         variant="permanent"
         anchor="right"
         open
         sx={{
-          width: { xs: "60vw", sm: "35vw", md: "240px" },
+          width: { xs: "0px", md: "280px" },
           flexShrink: 0,
+          display: { xs: "none", md: "block" },
           "& .MuiDrawer-paper": {
-            width: { xs: "60vw", sm: "35vw", md: "240px" },
-            background: "linear-gradient(180deg, #2d2d3d 0%, #1e1e2e 100%)",
-            border: "1px solid rgba(255, 255, 255, 0.05)",
-            backdropFilter: "blur(10px)",
+            width: "280px",
+            background: "#121212",
+            border: "1px solid #1a1a1a",
+            backdropFilter: "none",
           },
         }}
       >
@@ -574,46 +572,41 @@ export default function ChatApp() {
           <Typography
             variant="h6"
             sx={{
-              color: "#fff",
-              fontWeight: 700,
-              fontSize: "1.1rem",
-              letterSpacing: "0.5px",
+              color: "#888888",
+              fontWeight: 600,
+              fontSize: "0.85rem",
+              letterSpacing: "0.8px",
               textTransform: "uppercase",
             }}
           >
-            👥 Usuarios
+            Members
           </Typography>
         </Box>
-        <Divider sx={{ bgcolor: "rgba(255, 255, 255, 0.1)" }} />
+        <Divider sx={{ bgcolor: "#1a1a1a" }} />
         <List sx={{ p: 0 }}>
           {currentUsers.map((user) => (
             <ListItem
               key={user.user.id}
               sx={{
                 px: 2,
-                py: 1.5,
-                bgcolor: user.active
-                  ? "rgba(124, 92, 255, 0.1)"
-                  : "transparent",
-                borderLeft: user.active
-                  ? "3px solid #43B581"
-                  : "3px solid transparent",
-                transition: "all 0.3s ease",
+                py: 1.2,
+                bgcolor: "transparent",
+                borderLeft: "2px solid transparent",
+                transition: "all 0.2s ease",
                 "&:hover": {
-                  bgcolor: "rgba(124, 92, 255, 0.15)",
+                  bgcolor: "#1a1a1a",
                 },
               }}
             >
               <ListItemAvatar>
                 <Avatar
                   sx={{
-                    width: 36,
-                    height: 36,
-                    background: user.active
-                      ? "linear-gradient(135deg, #43B581 0%, #2ecc71 100%)"
-                      : "linear-gradient(135deg, #747f8d 0%, #5d6d7b 100%)",
-                    fontWeight: 700,
-                    fontSize: "0.9rem",
+                    width: 32,
+                    height: 32,
+                    background: user.active ? "#00d4ff" : "#333333",
+                    color: user.active ? "#000000" : "#888888",
+                    fontWeight: 600,
+                    fontSize: "0.85rem",
                   }}
                 >
                   {user.user.username[0].toUpperCase()}
@@ -625,21 +618,17 @@ export default function ChatApp() {
                   sx: {
                     fontWeight: 500,
                     fontSize: "0.9rem",
-                    color: "#fff",
+                    color: "#ffffff",
                   },
                 }}
               />
               {user.active && (
-                <Chip
-                  label="Online"
-                  size="small"
+                <Box
                   sx={{
-                    height: 20,
-                    background:
-                      "linear-gradient(90deg, #43B581 0%, #2ecc71 100%)",
-                    color: "#fff",
-                    fontSize: "0.65rem",
-                    fontWeight: 600,
+                    width: 8,
+                    height: 8,
+                    borderRadius: "50%",
+                    background: "#00d4ff",
                   }}
                 />
               )}

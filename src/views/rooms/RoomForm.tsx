@@ -1,4 +1,5 @@
 import type React from "react";
+
 import {
   Dialog,
   DialogTitle,
@@ -17,7 +18,6 @@ interface Props {
 
 export default function SimpleFormDialog({ open, onClose, onSubmit }: Props) {
   const [form, setForm] = useState({ field1: "", field2: "" });
-  const [hoveredField, setHoveredField] = useState<string | null>(null);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -37,107 +37,92 @@ export default function SimpleFormDialog({ open, onClose, onSubmit }: Props) {
       onClose={onClose}
       PaperProps={{
         sx: {
-          borderRadius: "12px",
-          background: "linear-gradient(135deg, #1e1e2e 0%, #2d2d3d 100%)",
-          boxShadow: "0 20px 60px rgba(0, 0, 0, 0.3)",
-          backdropFilter: "blur(10px)",
+          borderRadius: "8px",
+          background: "#1a1a1a",
+          boxShadow: "0 20px 60px rgba(0, 0, 0, 0.5)",
+          backdropFilter: "none",
+          border: "1px solid #333333",
         },
       }}
     >
       <DialogTitle
         sx={{
-          background: "linear-gradient(90deg, #7c5cff 0%, #5f40e8 100%)",
-          color: "#fff",
-          fontSize: "1.3rem",
+          background: "#121212",
+          color: "#ffffff",
+          fontSize: "1.1rem",
           fontWeight: 600,
-          letterSpacing: "0.5px",
+          borderBottom: "1px solid #333333",
         }}
       >
-        🚀 Crear Nueva Sala
+        Create Channel
       </DialogTitle>
 
       <DialogContent
         sx={{
           display: "flex",
           flexDirection: "column",
-          gap: 3,
-          pt: 3,
+          gap: 2.5,
+          pt: 2.5,
           pb: 2,
         }}
       >
         <TextField
-          label="Nombre de la sala"
+          label="Channel Name"
           name="field1"
           value={form.field1}
           onChange={handleChange}
-          onMouseEnter={() => setHoveredField("field1")}
-          onMouseLeave={() => setHoveredField(null)}
-          placeholder="ej: general, random..."
+          placeholder="e.g. general, random..."
           fullWidth
           variant="outlined"
-          size="medium"
+          size="small"
           sx={{
             "& .MuiOutlinedInput-root": {
-              color: "#fff",
-              bgcolor: hoveredField === "field1" ? "#3d3d4d" : "#2d2d3d",
-              borderRadius: "8px",
-              transition: "all 0.3s ease",
+              color: "#ffffff",
+              bgcolor: "#121212",
+              borderRadius: "4px",
+              transition: "all 0.2s ease",
               "& fieldset": {
-                borderColor: hoveredField === "field1" ? "#7c5cff" : "#4d4d5d",
-                transition: "all 0.3s ease",
+                borderColor: "#333333",
               },
               "&:hover fieldset": {
-                borderColor: "#7c5cff",
+                borderColor: "#444444",
               },
               "&.Mui-focused fieldset": {
-                borderColor: "#7c5cff",
-                borderWidth: 2,
+                borderColor: "#00d4ff",
               },
             },
             "& .MuiOutlinedInput-input::placeholder": {
-              color: "#8d8d9d",
+              color: "#555555",
               opacity: 1,
-            },
-            "& .MuiInputBase-input": {
-              fontSize: "0.95rem",
-              fontWeight: 500,
             },
           }}
         />
 
         <TextField
-          label="Descripción"
+          label="Description"
           name="field2"
           value={form.field2}
           onChange={handleChange}
-          onMouseEnter={() => setHoveredField("field2")}
-          onMouseLeave={() => setHoveredField(null)}
-          placeholder="Describe el propósito de esta sala..."
+          placeholder="Describe the purpose..."
           fullWidth
           multiline
           rows={3}
           variant="outlined"
           sx={{
             "& .MuiOutlinedInput-root": {
-              color: "#fff",
-              bgcolor: hoveredField === "field2" ? "#3d3d4d" : "#2d2d3d",
-              borderRadius: "8px",
-              transition: "all 0.3s ease",
+              color: "#ffffff",
+              bgcolor: "#121212",
+              borderRadius: "4px",
+              transition: "all 0.2s ease",
               "& fieldset": {
-                borderColor: hoveredField === "field2" ? "#7c5cff" : "#4d4d5d",
-                transition: "all 0.3s ease",
+                borderColor: "#333333",
               },
               "&:hover fieldset": {
-                borderColor: "#7c5cff",
+                borderColor: "#444444",
               },
               "&.Mui-focused fieldset": {
-                borderColor: "#7c5cff",
-                borderWidth: 2,
+                borderColor: "#00d4ff",
               },
-            },
-            "& .MuiOutlinedInput-input::placeholder": {
-              color: "#8d8d9d",
-              opacity: 1,
             },
           }}
         />
@@ -145,49 +130,49 @@ export default function SimpleFormDialog({ open, onClose, onSubmit }: Props) {
 
       <DialogActions
         sx={{
-          p: 2,
+          p: 1.5,
           gap: 1,
-          borderTop: "1px solid #4d4d5d",
+          borderTop: "1px solid #333333",
         }}
       >
         <Button
           onClick={onClose}
           sx={{
-            color: "#8d8d9d",
+            color: "#888888",
             textTransform: "none",
-            fontSize: "0.95rem",
-            fontWeight: 600,
-            transition: "all 0.3s ease",
+            fontSize: "0.9rem",
+            fontWeight: 500,
+            transition: "all 0.2s ease",
             "&:hover": {
-              bgcolor: "rgba(255, 255, 255, 0.1)",
-              color: "#fff",
+              bgcolor: "rgba(255, 255, 255, 0.05)",
+              color: "#ffffff",
             },
           }}
         >
-          Cancelar
+          Cancel
         </Button>
         <Button
           onClick={handleSubmit}
           variant="contained"
           disabled={!form.field1.trim()}
           sx={{
-            background: "linear-gradient(90deg, #7c5cff 0%, #5f40e8 100%)",
-            color: "#fff",
+            background: "#00d4ff",
+            color: "#000000",
             textTransform: "none",
-            fontSize: "0.95rem",
+            fontSize: "0.9rem",
             fontWeight: 600,
-            borderRadius: "6px",
-            transition: "all 0.3s ease",
+            borderRadius: "4px",
+            transition: "all 0.2s ease",
             "&:hover:not(:disabled)": {
-              transform: "translateY(-2px)",
-              boxShadow: "0 10px 25px rgba(124, 92, 255, 0.4)",
+              background: "#00b8cc",
+              transform: "translateY(-1px)",
             },
             "&:disabled": {
-              opacity: 0.5,
+              opacity: 0.4,
             },
           }}
         >
-          Crear Sala
+          Create
         </Button>
       </DialogActions>
     </Dialog>
